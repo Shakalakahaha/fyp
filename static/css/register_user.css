@@ -1,0 +1,693 @@
+/* register_user.css - Styles for user/developer registration page */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background-color: #f5f8fa;
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    width: 100%;
+}
+
+/* Header Styles */
+header {
+    background-color: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 15px 0;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: 700;
+    color: #3a86ff;
+    text-decoration: none;
+}
+
+.nav-links {
+    display: flex;
+    list-style: none;
+    align-items: center;
+}
+
+.nav-links li {
+    margin-left: 30px;
+    position: relative;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.nav-links a:hover {
+    color: #3a86ff;
+}
+
+/* Dropdown Menu */
+.dropdown {
+    position: relative;
+}
+
+.dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #fff;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    padding: 8px 0;
+    min-width: 250px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    z-index: 100;
+}
+
+.dropdown:hover .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    color: #333;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-item i {
+    font-size: 20px;
+    color: #3a86ff;
+    width: 24px;
+    text-align: center;
+}
+
+.dropdown-item div {
+    display: flex;
+    flex-direction: column;
+}
+
+.dropdown-item strong {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.dropdown-item span {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 2px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+    background-color: #3a86ff;
+    color: #fff;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s;
+    text-decoration: none;
+    text-align: center;
+    min-width: 120px;
+    max-width: 250px;
+    width: 100%;
+}
+
+.btn:hover {
+    background-color: #2a65cc;
+}
+
+.btn-outline {
+    background-color: transparent;
+    border: 2px solid #3a86ff;
+    color: #3a86ff;
+    padding: 8px 18px;
+    min-width: auto;
+    width: auto;
+    border-radius: 4px;
+}
+
+.btn-outline:hover {
+    background-color: #3a86ff;
+    color: #fff;
+}
+
+/* Main Content */
+.main-content {
+    padding-top: 100px;
+    padding-bottom: 40px;
+    min-height: 100vh;
+    overflow-y: auto;
+}
+
+/* Form Container */
+.form-container {
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+    padding: 40px;
+    max-width: 600px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+}
+
+.form-container h2 {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    color: #2b3445;
+    text-align: center;
+}
+
+.form-container > p {
+    color: #546e7a;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+/* Step Indicator - Modern Design */
+.step-indicator {
+    display: flex;
+    justify-content: space-between;
+    margin: 30px 0 40px;
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Remove the pseudo elements used for lines */
+.step-indicator::before,
+.step-indicator::after,
+.step:not(:first-child)::before,
+.step.completed:not(:first-child)::before {
+    display: none;
+}
+
+/* Individual step container */
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+    width: 100%;
+}
+
+/* Horizontal connector lines between steps */
+.step:not(:first-child)::after {
+    content: '';
+    position: absolute;
+    top: 30px;
+    left: calc(-50% + 30px);
+    width: calc(100% - 60px);
+    height: 4px;
+    background-color: #e2e8f0; /* gray-300 */
+    z-index: 1;
+    transition: background-color 0.5s ease;
+}
+
+.step.active:not(:first-child)::after,
+.step.completed:not(:first-child)::after {
+    background-color: #3b82f6; /* blue-500 */
+}
+
+/* Step indicator circle */
+.step-number {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 20px;
+    position: relative;
+    z-index: 2;
+    background-color: #e2e8f0; /* gray-300 */
+    color: #ffffff;
+    transition: all 0.5s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Inactive step */
+.step .step-number {
+    background-color: #e2e8f0; /* gray-300 */
+}
+
+/* Active step */
+.step.active .step-number {
+    background-color: #3b82f6; /* blue-500 */
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4);
+    animation: pulse 2s infinite;
+}
+
+/* Completed step */
+.step.completed .step-number {
+    background-color: #22c55e; /* green-500 */
+    box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.4);
+    color: transparent; /* Hide the number */
+}
+
+/* Checkmark for completed step */
+.step.completed .step-number::before {
+    content: '\f00c'; /* Font Awesome checkmark */
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    font-size: 20px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #ffffff;
+}
+
+/* Step labels */
+.step-title {
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 8px;
+    text-align: center;
+    transition: all 0.3s ease;
+    color: #94a3b8; /* gray-400 */
+}
+
+.step.active .step-title {
+    color: #3b82f6; /* blue-500 */
+    font-weight: 600;
+}
+
+.step.completed .step-title {
+    color: #22c55e; /* green-500 */
+}
+
+/* Animation for active step */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
+}
+
+/* Tooltip for step hover */
+.step-tooltip {
+    display: none;
+}
+
+.step-connector {
+    display: none; /* We're using the pseudo elements instead */
+}
+
+/* Animations */
+@keyframes check-appear {
+    0% {
+        opacity: 0;
+        transform: scale(0);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Form Steps */
+.form-step {
+    display: none;
+}
+
+.form-step.active {
+    display: block;
+}
+
+/* Form Inputs */
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #2b3445;
+}
+
+.input-group input,
+.input-group select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+    border-color: #3a86ff;
+    outline: none;
+}
+
+.error {
+    color: #f44336;
+    font-size: 0.8rem;
+    margin-top: 5px;
+    display: none;
+}
+
+/* Verification Code */
+.verification-code-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 30px 0;
+}
+
+.verification-code-input,
+.recovery-code-input {
+    width: 50px;
+    height: 60px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1.5rem;
+    text-align: center;
+    transition: border-color 0.3s;
+}
+
+.verification-code-input:focus,
+.recovery-code-input:focus {
+    border-color: #3a86ff;
+    outline: none;
+}
+
+/* Resend Code */
+.resend-code {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.resend-code button {
+    background: none;
+    border: none;
+    color: #3a86ff;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 5px;
+}
+
+.timer {
+    font-size: 0.8rem;
+    color: #757575;
+}
+
+/* Form Buttons */
+.form-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+}
+
+.form-buttons.single-button {
+    justify-content: center;
+}
+
+.btn-back {
+    background-color: #f5f5f5;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.btn-back:hover {
+    background-color: #e0e0e0;
+}
+
+/* Success Icon */
+.success-icon {
+    font-size: 5rem;
+    color: #4caf50;
+    text-align: center;
+    margin: 20px 0;
+}
+
+/* Login Link */
+.login-link {
+    text-align: center;
+    margin-top: 20px;
+    color: #546e7a;
+    font-size: 0.9rem;
+}
+
+.login-link a {
+    color: #3a86ff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.recovery-link {
+    display: block;
+    text-align: right;
+    font-size: 0.8rem;
+    color: #3a86ff;
+    text-decoration: none;
+    margin-top: 5px;
+}
+
+/* Footer */
+footer {
+    background-color: #2b3445;
+    color: #fff;
+    padding: 20px 0;
+    margin-top: auto;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.copyright {
+    color: #b0bec5;
+    font-size: 0.9rem;
+}
+
+.footer-links {
+    display: flex;
+    list-style: none;
+    gap: 20px;
+}
+
+.footer-links a {
+    color: #b0bec5;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.3s;
+}
+
+.footer-links a:hover {
+    color: #3a86ff;
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+    .form-container {
+        padding: 30px 20px;
+        margin: 0 auto;
+    }
+    
+    .step-number {
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+    }
+    
+    .step-icon {
+        font-size: 16px;
+    }
+    
+    .step:hover {
+        transform: none;
+    }
+    
+    .step-tooltip {
+        display: none;
+    }
+    
+    .form-buttons {
+        flex-direction: column-reverse;
+        gap: 10px;
+    }
+    
+    .form-buttons button,
+    .form-buttons a {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .verification-code-input,
+    .recovery-code-input {
+        width: 40px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+    
+    .dropdown-menu {
+        position: absolute;
+        width: 200px;
+    }
+}
+
+/* Animation for step transition */
+.step.animated .step-number {
+    animation: bounce 0.5s ease;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+/* For mobile, keep things simpler */
+@media (max-width: 768px) {
+    .step.animated .step-number {
+        animation: none;
+    }
+}
+
+/* Company ID Display */
+.company-id-display {
+    display: flex;
+    align-items: center;
+    background-color: #f5f8fa;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    margin: 20px 0;
+    overflow: hidden;
+}
+
+.company-id-display input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 15px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #3a86ff;
+    text-align: center;
+}
+
+.company-id-display button {
+    background-color: #f0f4f8;
+    border: none;
+    padding: 15px;
+    cursor: pointer;
+    color: #3a86ff;
+    border-left: 1px solid #ddd;
+    transition: all 0.3s ease;
+}
+
+.company-id-display button:hover {
+    background-color: #e0e7f1;
+}
+
+/* Connector lines between steps */
+.step:not(:first-child)::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background-color: #e6e6e6;
+    top: 30px;
+    left: -50%;
+    z-index: 0;
+}
+
+.step.completed:not(:first-child)::before {
+    background-color: #4caf50;
+}
+
+/* Media Queries for Step Indicator */
+@media (max-width: 768px) {
+    .step-indicator {
+        margin: 20px 0 30px;
+    }
+    
+    .step-number {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+    
+    .step:not(:first-child)::after {
+        top: 20px;
+        left: calc(-50% + 20px);
+        width: calc(100% - 40px);
+        height: 3px;
+    }
+    
+    .step-title {
+        font-size: 12px;
+        margin-top: 6px;
+    }
+    
+    .step.completed .step-number::before {
+        font-size: 16px;
+    }
+} 

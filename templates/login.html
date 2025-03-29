@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Churn Buster</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav class="navbar">
+                <a href="{{ url_for('index') }}" class="logo">Churn Buster</a>
+                <ul class="nav-links">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle">Register <i class="fas fa-chevron-down"></i></a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url_for('register_company') }}" class="dropdown-item">
+                                <i class="fas fa-building"></i>
+                                <div>
+                                    <strong>Company</strong>
+                                    <span>Register your organization</span>
+                                </div>
+                            </a>
+                            <a href="{{ url_for('register_user') }}" class="dropdown-item">
+                                <i class="fas fa-user"></i>
+                                <div>
+                                    <strong>User</strong>
+                                    <span>Create personal account</span>
+                                </div>
+                            </a>
+                        </div>
+                    </li>
+                    <li><a href="{{ url_for('login') }}" class="btn btn-outline">Login</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="form-container">
+                <!-- Login Form -->
+                <div class="form-step active" id="login-form">
+                    <h2>Login</h2>
+                    <form id="login-form-element">
+                        <div class="input-group">
+                            <label for="account-type">Account Type</label>
+                            <select id="account-type" name="account_type" required>
+                                <option value="">Select an account type</option>
+                                <option value="user">User</option>
+                                <option value="developer">Developer</option>
+                            </select>
+                            <div class="error" id="account-type-error">Please select an account type</div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" name="email" required>
+                            <div class="error" id="email-error">Please enter a valid email address</div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password" required>
+                            <div class="error" id="password-error">Please enter your password</div>
+                            <a href="#" class="recovery-link" id="forgot-password">Forgot Password?</a>
+                        </div>
+                        
+                        <button type="submit" class="btn" id="login-btn">Login</button>
+                        
+                        <div class="register-link">
+                            <p>Don't have an account? <a href="{{ url_for('register_user') }}">Register Now</a></p>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Password Recovery Step 1 - Enter Email -->
+                <div class="form-step" id="recover-step-1">
+                    <h2>Password Recovery</h2>
+                    <p>Enter your email address and account type to reset your password.</p>
+                    
+                    <div class="input-group">
+                        <label for="account-type-recovery">Account Type</label>
+                        <select id="account-type-recovery" name="account_type_recovery" required>
+                            <option value="">Select an account type</option>
+                            <option value="user">Employee</option>
+                            <option value="developer">System Developer</option>
+                        </select>
+                        <div class="error" id="account-type-recovery-error">Please select an account type</div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="recovery-email">Email Address</label>
+                        <input type="email" id="recovery-email" name="recovery_email" required>
+                        <div class="error" id="recovery-email-error">Please enter a valid email address</div>
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button type="button" class="btn btn-back" id="cancel-recovery">Cancel</button>
+                        <button type="button" class="btn" id="send-recovery-email">Continue</button>
+                    </div>
+                </div>
+                
+                <!-- Password Recovery Step 2 - Enter Verification Code -->
+                <div class="form-step" id="recover-step-2">
+                    <h2>Enter Verification Code</h2>
+                    <p>A verification code has been sent to your email. Please enter it below.</p>
+                    
+                    <div class="verification-code">
+                        <input type="text" maxlength="1" class="recovery-code-input" placeholder="0">
+                        <input type="text" maxlength="1" class="recovery-code-input" placeholder="0">
+                        <input type="text" maxlength="1" class="recovery-code-input" placeholder="0">
+                        <input type="text" maxlength="1" class="recovery-code-input" placeholder="0">
+                        <input type="text" maxlength="1" class="recovery-code-input" placeholder="0">
+                        <input type="text" maxlength="1" class="recovery-code-input" placeholder="0">
+                    </div>
+                    
+                    <div class="resend-code">
+                        <button type="button" class="link-button" id="resend-recovery-btn">Resend Code</button>
+                        <div class="timer" id="recovery-resend-timer">
+                            Resend in <span id="recovery-timer-count">60</span>s
+                        </div>
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button type="button" class="btn btn-back" id="back-to-recovery-email">Back</button>
+                        <button type="button" class="btn" id="verify-recovery-code" disabled>Verify</button>
+                    </div>
+                </div>
+                
+                <!-- Password Recovery Step 3 - Set New Password -->
+                <div class="form-step" id="recover-step-3">
+                    <h2>Set New Password</h2>
+                    <p>Please enter your new password below.</p>
+                    
+                    <div class="input-group">
+                        <label for="new-password">New Password</label>
+                        <input type="password" id="new-password" name="new_password" required>
+                        <div class="error" id="new-password-error">Password must be at least 8 characters</div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="confirm-new-password">Confirm New Password</label>
+                        <input type="password" id="confirm-new-password" name="confirm_new_password" required>
+                        <div class="error" id="confirm-new-password-error">Passwords do not match</div>
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button type="button" class="btn" id="reset-password-btn">Reset Password</button>
+                    </div>
+                </div>
+                
+                <!-- Password Recovery Step 4 - Success Message -->
+                <div class="form-step" id="recover-step-4">
+                    <div class="success-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    
+                    <h2>Password Reset Successful!</h2>
+                    <p>Your password has been reset successfully. You will be redirected to the login page shortly.</p>
+                    
+                    <div class="form-buttons">
+                        <button type="button" class="btn" id="return-to-login">Return to Login</button>
+                    </div>
+                </div>
+
+                <!-- Forgot Password - Step 1: Enter Email -->
+                <div id="forgotPasswordStep1" class="auth-form" style="display: none;">
+                    <h2>Forgot Password</h2>
+                    <p>Enter your email address to receive a verification code.</p>
+                    
+                    <form id="forgotPasswordForm">
+                        <div class="form-group">
+                            <label for="resetEmail">Email Address</label>
+                            <input type="email" class="form-control" id="resetEmail" placeholder="Enter your email" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Account Type</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="reset-account-type" id="resetUserType" value="user">
+                                <label class="form-check-label" for="resetUserType">
+                                    User
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="reset-account-type" id="resetDeveloperType" value="developer">
+                                <label class="form-check-label" for="resetDeveloperType">
+                                    Developer
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div id="forgotPasswordError" class="error-message"></div>
+                        
+                        <div class="form-buttons">
+                            <button type="button" class="btn btn-back backToLogin">Back to Login</button>
+                            <button type="submit" id="resetSubmitBtn" class="btn">Submit</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Forgot Password - Step 2: Enter Verification Code -->
+                <div id="forgotPasswordStep2" class="auth-form" style="display: none;">
+                    <h2>Enter Verification Code</h2>
+                    <p>We've sent a verification code to <span id="resetEmail2"></span></p>
+                    
+                    <form id="verifyResetTokenForm">
+                        <div class="form-group code-inputs">
+                            <label>Verification Code</label>
+                            <div class="verification-code">
+                                <input type="text" class="recovery-code-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                                <input type="text" class="recovery-code-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                                <input type="text" class="recovery-code-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                                <input type="text" class="recovery-code-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                                <input type="text" class="recovery-code-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                                <input type="text" class="recovery-code-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                            </div>
+                        </div>
+                        
+                        <div id="verifyResetTokenError" class="error-message"></div>
+                        
+                        <div class="resend-code">
+                            <button type="button" class="link-button" id="resendRecoveryCode">Resend Code</button>
+                            <div class="timer" id="resendRecoveryTimer">
+                                Resend in <span id="resend-recovery-count">60</span>s
+                            </div>
+                        </div>
+                        
+                        <div class="form-buttons">
+                            <button type="button" class="btn btn-back backToLogin">Back to Login</button>
+                            <button type="button" id="verifyResetTokenBtn" class="btn">Verify</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Forgot Password - Step 3: Set New Password -->
+                <div id="forgotPasswordStep3" class="auth-form" style="display: none;">
+                    <h2>Set New Password</h2>
+                    <p>Please enter your new password.</p>
+                    
+                    <form id="resetPasswordForm">
+                        <div class="form-group">
+                            <label for="newPassword">New Password</label>
+                            <input type="password" class="form-control" id="newPassword" placeholder="Enter new password" required>
+                            <small class="form-text">Password must be at least 8 characters</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="confirmNewPassword">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirmNewPassword" placeholder="Confirm new password" required>
+                        </div>
+                        
+                        <div id="resetPasswordError" class="error-message"></div>
+                        
+                        <div class="form-buttons">
+                            <button type="button" class="btn btn-back backToLogin">Back to Login</button>
+                            <button type="submit" id="setNewPasswordBtn" class="btn">Set New Password</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+</body>
+</html> 
