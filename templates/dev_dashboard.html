@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Model Developer Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dev_dashboard.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <header>
+            <h1>ML Model Developer Dashboard</h1>
+        </header>
+
+        <main>
+            <!-- Model Performance Overview Section -->
+            <section class="performance-overview">
+                <h2>Model Performance Overview</h2>
+                <div class="model-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>Accuracy</th>
+                                <th>Precision</th>
+                                <th>Recall</th>
+                                <th>F1 Score</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Decision Tree</td>
+                                <td>0.85</td>
+                                <td>0.83</td>
+                                <td>0.86</td>
+                                <td>0.84</td>
+                                <td>
+                                    <button class="action-btn retrain">Retrain</button>
+                                    <button class="action-btn deploy">Deploy</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>GBM</td>
+                                <td>0.88</td>
+                                <td>0.87</td>
+                                <td>0.89</td>
+                                <td>0.88</td>
+                                <td>
+                                    <button class="action-btn retrain">Retrain</button>
+                                    <button class="action-btn deploy">Deploy</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Logistic Regression</td>
+                                <td>0.82</td>
+                                <td>0.81</td>
+                                <td>0.83</td>
+                                <td>0.82</td>
+                                <td>
+                                    <button class="action-btn retrain">Retrain</button>
+                                    <button class="action-btn deploy">Deploy</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Random Forest</td>
+                                <td>0.87</td>
+                                <td>0.86</td>
+                                <td>0.88</td>
+                                <td>0.87</td>
+                                <td>
+                                    <button class="action-btn retrain">Retrain</button>
+                                    <button class="action-btn deploy">Deploy</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Neural Network</td>
+                                <td>0.89</td>
+                                <td>0.88</td>
+                                <td>0.90</td>
+                                <td>0.89</td>
+                                <td>
+                                    <button class="action-btn retrain">Retrain</button>
+                                    <button class="action-btn deploy">Deploy</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Performance Graph Section -->
+            <section class="performance-graph">
+                <h2>Model Performance Comparison</h2>
+                <div class="graph-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </section>
+
+            <!-- Quick Actions Section -->
+            <section class="quick-actions">
+                <h2>Quick Actions</h2>
+                <div class="action-buttons">
+                    <div class="action-card">
+                        <h3>Make Prediction</h3>
+                        <p>Upload new data for prediction using the deployed model</p>
+                        <button id="predictBtn" class="primary-btn">Start Prediction</button>
+                    </div>
+                    <div class="action-card">
+                        <h3>Retrain Model</h3>
+                        <p>Upload new dataset to retrain selected model</p>
+                        <button id="retrainBtn" class="primary-btn">Start Retraining</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='js/dev_dashboard.js') }}"></script>
+</body>
+</html> 

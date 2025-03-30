@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from flask_mail import Mail
+from functools import wraps
 import mysql.connector
 import random
 import string
@@ -7,6 +8,7 @@ import secrets
 from werkzeug.security import generate_password_hash, check_password_hash
 import logging
 import email_service
+from model_initialization import initialize_default_models, get_model_metrics, initialize_developer_environment
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -14,6 +16,33 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)
+
+# Login required decorator
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Developer only decorator
+def developer_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user' not in session or session['user'].get('account_type') != 'developer':
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# User only decorator
+def user_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user' not in session or session['user'].get('account_type') != 'user':
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 # Email Configuration
 app.config.update(
@@ -38,7 +67,7 @@ def get_db_connection():
             host="localhost",
             user="root",
             password="",
-            database="flask_company_system"
+            database="fyp_db"
         )
         return conn
     except mysql.connector.Error as err:
@@ -54,7 +83,7 @@ def generate_company_id(cursor):
         company_id = f"CCP{random_digits}"
         
         # Check if it exists in the database
-        cursor.execute("SELECT COUNT(*) FROM company WHERE company_id = %s", (company_id,))
+        cursor.execute("SELECT COUNT(*) FROM Companies WHERE id = %s", (company_id,))
         count = cursor.fetchone()[0]
         
         if count == 0:
@@ -93,7 +122,7 @@ def api_register_company():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    cursor.execute("SELECT * FROM company WHERE company_email = %s", (company_email,))
+    cursor.execute("SELECT * FROM Companies WHERE email = %s", (company_email,))
     if cursor.fetchone():
         cursor.close()
         conn.close()
@@ -153,9 +182,9 @@ def api_verify_company():
     try:
         company_id = generate_company_id(cursor)
         
-        # Insert into company table
+        # Insert into Companies table
         cursor.execute(
-            "INSERT INTO company (company_id, company_name, company_email, email_verified) VALUES (%s, %s, %s, %s)",
+            "INSERT INTO Companies (id, name, email, email_verified) VALUES (%s, %s, %s, %s)",
             (company_id, session['pending_company']['name'], session['pending_company']['email'], True)
         )
         
@@ -192,9 +221,9 @@ def api_register_user():
     cursor = conn.cursor()
     
     if account_type == 'developer':
-        cursor.execute("SELECT * FROM developer WHERE email = %s", (email,))
+        cursor.execute("SELECT * FROM Developers WHERE email = %s", (email,))
     else:
-        cursor.execute("SELECT * FROM user WHERE email = %s", (email,))
+        cursor.execute("SELECT * FROM Users WHERE email = %s", (email,))
     
     if cursor.fetchone():
         cursor.close()
@@ -202,7 +231,7 @@ def api_register_user():
         return jsonify({"success": False, "message": "User with this email already exists"}), 400
     
     # Check if company exists
-    cursor.execute("SELECT * FROM company WHERE company_id = %s", (company_id,))
+    cursor.execute("SELECT * FROM Companies WHERE id = %s", (company_id,))
     if not cursor.fetchone():
         cursor.close()
         conn.close()
@@ -270,13 +299,13 @@ def api_verify_user():
     try:
         if session['pending_user']['account_type'] == 'developer':
             cursor.execute(
-                "INSERT INTO developer (company_id, email, password, email_verified) VALUES (%s, %s, %s, %s)",
+                "INSERT INTO Developers (company_id, email, password_hash, email_verified) VALUES (%s, %s, %s, %s)",
                 (session['pending_user']['company_id'], session['pending_user']['email'], 
                  session['pending_user']['password'], True)
             )
         else:
             cursor.execute(
-                "INSERT INTO user (company_id, email, password, email_verified) VALUES (%s, %s, %s, %s)",
+                "INSERT INTO Users (company_id, email, password_hash, email_verified) VALUES (%s, %s, %s, %s)",
                 (session['pending_user']['company_id'], session['pending_user']['email'], 
                  session['pending_user']['password'], True)
             )
@@ -312,13 +341,13 @@ def api_login():
     
     try:
         if account_type == 'developer':
-            cursor.execute("SELECT * FROM developer WHERE email = %s", (email,))
+            cursor.execute("SELECT * FROM Developers WHERE email = %s", (email,))
         else:
-            cursor.execute("SELECT * FROM user WHERE email = %s", (email,))
+            cursor.execute("SELECT * FROM Users WHERE email = %s", (email,))
         
         user = cursor.fetchone()
         
-        if user and check_password_hash(user['password'], password):
+        if user and check_password_hash(user['password_hash'], password):
             # Store user info in session
             session['user'] = {
                 'id': user['id'],
@@ -354,9 +383,9 @@ def api_forgot_password():
     try:
         # Check if user/developer exists with given email
         if account_type == 'user':
-            cursor.execute("SELECT email FROM user WHERE email = %s", (email,))
+            cursor.execute("SELECT email FROM Users WHERE email = %s", (email,))
         elif account_type == 'developer':
-            cursor.execute("SELECT email FROM developer WHERE email = %s", (email,))
+            cursor.execute("SELECT email FROM Developers WHERE email = %s", (email,))
         else:
             logger.warning(f"Invalid account type: {account_type}")
             return jsonify({"success": False, "message": "Invalid account type"}), 400
@@ -445,9 +474,9 @@ def api_reset_password():
     try:
         # Update password in appropriate table based on account type
         if account_type == 'user':
-            cursor.execute("UPDATE user SET password = %s WHERE email = %s", (hashed_password, email))
+            cursor.execute("UPDATE Users SET password_hash = %s WHERE email = %s", (hashed_password, email))
         elif account_type == 'developer':
-            cursor.execute("UPDATE developer SET password = %s WHERE email = %s", (hashed_password, email))
+            cursor.execute("UPDATE Developers SET password_hash = %s WHERE email = %s", (hashed_password, email))
         else:
             logger.error(f"Invalid account type during password reset: {account_type}")
             return jsonify({"success": False, "message": "Invalid account type"}), 400
@@ -480,12 +509,12 @@ def api_recover_company_id():
     
     try:
         # First check if it's a company email
-        cursor.execute("SELECT company_id FROM company WHERE company_email = %s", (email,))
+        cursor.execute("SELECT id FROM Companies WHERE email = %s", (email,))
         company = cursor.fetchone()
         
         if company:
             # Direct match with company email
-            company_id = company['company_id']
+            company_id = company['id']
             
             # For direct match, generate a recovery token too
             recovery_token = secrets.token_urlsafe(32)
@@ -506,13 +535,13 @@ def api_recover_company_id():
             return jsonify({"success": True, "message": "Verification code sent to email", "direct_match": False})
         else:
             # Check if it's a developer or user email
-            cursor.execute("SELECT company_id FROM developer WHERE email = %s", (email,))
+            cursor.execute("SELECT company_id FROM Developers WHERE email = %s", (email,))
             developer = cursor.fetchone()
             
             if developer:
                 company_id = developer['company_id']
             else:
-                cursor.execute("SELECT company_id FROM user WHERE email = %s", (email,))
+                cursor.execute("SELECT company_id FROM Users WHERE email = %s", (email,))
                 user = cursor.fetchone()
                 
                 if user:
@@ -575,6 +604,60 @@ def api_verify_company_id_recovery():
     
     logger.info(f"Company ID recovery verified for: {email}, ID: {company_id}")
     return jsonify({"success": True, "company_id": company_id})
+
+# Dashboard routes
+@app.route('/dev_dashboard')
+@developer_required
+def developer_dashboard():
+    return render_template('dev_dashboard.html')
+
+@app.route('/user_dashboard')
+@user_required
+def user_dashboard():
+    return render_template('user_dashboard.html')
+
+@app.route('/dev/dashboard')
+@developer_required
+def dev_dashboard():
+    """Render the developer dashboard."""
+    return render_template('dev_dashboard.html')
+
+@app.route('/api/models/initialize', methods=['POST'])
+@developer_required
+def initialize_models():
+    """Initialize default models and return their metrics."""
+    try:
+        # Get developer ID from session
+        developer_id = session['user']['id']
+        
+        result = initialize_developer_environment(developer_id)
+        return jsonify(result), 200 if result['status'] == 'success' else 500
+    except Exception as e:
+        logger.error(f"Error initializing models: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/models/metrics', methods=['GET'])
+@developer_required
+def get_models_metrics():
+    """Get metrics for all models."""
+    try:
+        # Get developer ID from session
+        developer_id = session['user']['id']
+        
+        metrics = get_model_metrics(developer_id)
+        return jsonify({
+            'status': 'success',
+            'data': metrics
+        }), 200
+    except Exception as e:
+        logger.error(f"Error getting metrics: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

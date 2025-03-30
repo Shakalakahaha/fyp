@@ -1,123 +1,198 @@
-import mysql.connector
-import random
-import string
+import os
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, Boolean, DateTime, Text, JSON, Enum, ForeignKey, UniqueConstraint, Index, text
+from sqlalchemy.sql import func
+from sqlalchemy.exc import SQLAlchemyError
+import logging
 
-def create_database():
-    # Connect to MySQL server (no database selected yet)
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Database connection settings
+DB_USER = 'root'  # Replace with your MySQL username
+DB_PASSWORD = ''  # Replace with your MySQL password
+DB_HOST = 'localhost'
+DB_NAME = 'fyp_db'  # Replace with your desired database name
+
+# Create database URL
+DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
+
+def create_tables():
     try:
-        conn = mysql.connector.connect(
-            host="localhost",
-            user="root",           # Default phpMyAdmin user, change if needed
-            password=""            # Default empty password, change if needed
+        # Create engine
+        engine = create_engine(DATABASE_URL)
+        metadata = MetaData()
+
+        # 1. Companies Table
+        companies = Table('Companies', metadata,
+            Column('id', String(10), primary_key=True),
+            Column('name', String(255), nullable=False),
+            Column('email', String(255), unique=True, nullable=False),
+            Column('registration_date', DateTime, server_default=func.current_timestamp()),
+            Column('email_verified', Boolean, server_default='0')
         )
-        
-        cursor = conn.cursor()
-        
-        # Create database if not exists
-        cursor.execute("CREATE DATABASE IF NOT EXISTS flask_company_system")
-        cursor.execute("USE flask_company_system")
-        
-        print("Database created successfully!")
-        
-        # Create company table
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS company (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            company_id VARCHAR(10) UNIQUE NOT NULL,
-            company_name VARCHAR(100) NOT NULL,
-            company_email VARCHAR(100) UNIQUE NOT NULL,
-            registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            email_verified BOOLEAN DEFAULT FALSE,
-            verification_token VARCHAR(100)
+
+        # 2. Developers Table
+        developers = Table('Developers', metadata,
+            Column('id', Integer, primary_key=True, autoincrement=True),
+            Column('company_id', String(10), ForeignKey('Companies.id', ondelete='CASCADE'), nullable=False),
+            Column('email', String(255), unique=True, nullable=False),
+            Column('password_hash', String(255), nullable=False),
+            Column('registration_date', DateTime, server_default=func.current_timestamp()),
+            Column('email_verified', Boolean, server_default='0'),
+            UniqueConstraint('company_id', name='unique_company_developer')
         )
-        """)
-        
-        # Create developer table
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS developer (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            company_id VARCHAR(10) NOT NULL,
-            email VARCHAR(100) UNIQUE NOT NULL,
-            password VARCHAR(255) NOT NULL,
-            registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            email_verified BOOLEAN DEFAULT FALSE,
-            verification_token VARCHAR(100),
-            FOREIGN KEY (company_id) REFERENCES company(company_id),
-            CONSTRAINT unique_company_developer UNIQUE (company_id)
+
+        # 3. Users Table
+        users = Table('Users', metadata,
+            Column('id', Integer, primary_key=True, autoincrement=True),
+            Column('company_id', String(10), ForeignKey('Companies.id', ondelete='CASCADE'), nullable=False),
+            Column('email', String(255), unique=True, nullable=False),
+            Column('password_hash', String(255), nullable=False),
+            Column('registration_date', DateTime, server_default=func.current_timestamp()),
+            Column('email_verified', Boolean, server_default='0')
         )
-        """)
-        
-        # Create user table
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS user (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            company_id VARCHAR(10) NOT NULL,
-            email VARCHAR(100) UNIQUE NOT NULL,
-            password VARCHAR(255) NOT NULL,
-            registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            email_verified BOOLEAN DEFAULT FALSE,
-            verification_token VARCHAR(100),
-            FOREIGN KEY (company_id) REFERENCES company(company_id)
+
+        # 4. Datasets Table
+        datasets = Table('Datasets', metadata,
+            Column('id', Integer, primary_key=True, autoincrement=True),
+            Column('developer_id', Integer, ForeignKey('Developers.id', ondelete='CASCADE'), nullable=False),
+            Column('dataset_name', String(255), nullable=False),
+            Column('file_path', String(255), nullable=False),
+            Column('row_count', Integer),
+            Column('is_system_default', Boolean, server_default='0'),
+            Column('created_at', DateTime, server_default=func.current_timestamp()),
+            Index('idx_developer_dataset', 'developer_id')
         )
-        """)
-        
-        print("All tables created successfully!")
-        
-        # Function to generate a unique company ID starting with CCP
-        def generate_company_id():
-            while True:
-                # Generate a random 7-digit number
-                random_digits = ''.join(random.choices(string.digits, k=7))
-                # Combine with CCP prefix
-                company_id = f"CCP{random_digits}"
-                
-                # Check if it exists in the database
-                cursor.execute("SELECT COUNT(*) FROM company WHERE company_id = %s", (company_id,))
-                count = cursor.fetchone()[0]
-                
-                if count == 0:
-                    return company_id
-        
-        # Add sample company for testing (optional)
-        add_sample = input("Do you want to add a sample company for testing? (y/n): ")
-        if add_sample.lower() == 'y':
-            company_id = generate_company_id()
-            cursor.execute("""
-            INSERT INTO company (company_id, company_name, company_email, email_verified)
-            VALUES (%s, %s, %s, %s)
-            """, (company_id, "Test Company", "test@company.com", True))
-            
-            print(f"Sample company created with ID: {company_id}")
-            
-            # Add sample developer
-            add_dev = input("Add a sample developer for this company? (y/n): ")
-            if add_dev.lower() == 'y':
-                cursor.execute("""
-                INSERT INTO developer (company_id, email, password, email_verified)
-                VALUES (%s, %s, %s, %s)
-                """, (company_id, "dev@test.com", "hashed_password_here", True))
-                print("Sample developer added")
-            
-            # Add sample user
-            add_user = input("Add a sample user for this company? (y/n): ")
-            if add_user.lower() == 'y':
-                cursor.execute("""
-                INSERT INTO user (company_id, email, password, email_verified)
-                VALUES (%s, %s, %s, %s)
-                """, (company_id, "user@test.com", "hashed_password_here", True))
-                print("Sample user added")
-        
-        conn.commit()
-        print("Database setup complete!")
-        
-    except mysql.connector.Error as err:
-        print(f"Error: {err}")
-    finally:
-        if 'conn' in locals() and conn.is_connected():
-            cursor.close()
-            conn.close()
-            print("MySQL connection closed")
+
+        # 5. Dataset Combinations Table
+        dataset_combinations = Table('Dataset_Combinations', metadata,
+            Column('id', Integer, primary_key=True, autoincrement=True),
+            Column('new_dataset_id', Integer, ForeignKey('Datasets.id', ondelete='CASCADE'), nullable=False),
+            Column('parent_dataset1_id', Integer, ForeignKey('Datasets.id', ondelete='CASCADE'), nullable=False),
+            Column('parent_dataset2_id', Integer, ForeignKey('Datasets.id', ondelete='CASCADE'), nullable=False),
+            Column('created_at', DateTime, server_default=func.current_timestamp()),
+            Index('idx_new_dataset', 'new_dataset_id')
+        )
+
+        # 6. Models Table
+        models = Table('Models', metadata,
+            Column('id', Integer, primary_key=True, autoincrement=True),
+            Column('developer_id', Integer, ForeignKey('Developers.id', ondelete='CASCADE'), nullable=False),
+            Column('model_name', String(255), nullable=False),
+            Column('parent_model_id', Integer, ForeignKey('Models.id', ondelete='SET NULL')),
+            Column('evaluation_type', Enum('default', 're-evaluated', 'retrained'), server_default='default', nullable=False),
+            Column('accuracy', Float, nullable=False),
+            Column('precision_score', Float, nullable=False),
+            Column('recall', Float, nullable=False),
+            Column('f1_score', Float, nullable=False),
+            Column('roc_auc', Float),
+            Column('model_file_path', String(255), nullable=False),
+            Column('metadata', JSON),
+            Column('is_system_default', Boolean, server_default='0'),
+            Column('version', Integer, nullable=False, server_default='1'),
+            Column('deployment_count', Integer, nullable=False, server_default='0'),
+            Column('created_at', DateTime, server_default=func.current_timestamp()),
+            Index('idx_developer_model', 'developer_id'),
+            Index('idx_model_metrics', 'accuracy', 'f1_score'),
+            Index('idx_model_versioning', 'developer_id', 'model_name', 'version')
+        )
+
+        # 7. Training Sessions Table
+        training_sessions = Table('Training_Sessions', metadata,
+            Column('id', Integer, primary_key=True, autoincrement=True),
+            Column('developer_id', Integer, ForeignKey('Developers.id', ondelete='CASCADE'), nullable=False),
+            Column('dataset_id', Integer, ForeignKey('Datasets.id', ondelete='CASCADE'), nullable=False),
+            Column('original_model_id', Integer, ForeignKey('Models.id', ondelete='CASCADE'), nullable=False),
+            Column('new_model_id', Integer, ForeignKey('Models.id', ondelete='SET NULL')),
+            Column('training_status', Enum('pending', 'in_progress', 'completed', 'failed'), server_default='pending'),
+            Column('error_message', Text),
+            Column('started_at', DateTime, server_default=func.current_timestamp()),
+            Column('completed_at', DateTime),
+            Index('idx_training_developer', 'developer_id'),
+            Index('idx_training_status', 'training_status')
+        )
+
+        # 8. Retraining History Table
+        retraining_history = Table('Retraining_History', metadata,
+            Column('id', Integer, primary_key=True, autoincrement=True),
+            Column('training_session_id', Integer, ForeignKey('Training_Sessions.id', ondelete='CASCADE'), nullable=False),
+            Column('developer_id', Integer, ForeignKey('Developers.id', ondelete='CASCADE'), nullable=False),
+            Column('original_model_id', Integer, ForeignKey('Models.id', ondelete='CASCADE'), nullable=False),
+            Column('retrained_model_id', Integer, ForeignKey('Models.id', ondelete='CASCADE'), nullable=False),
+            Column('dataset_id', Integer, ForeignKey('Datasets.id', ondelete='CASCADE'), nullable=False),
+            Column('old_accuracy', Float, nullable=False),
+            Column('new_accuracy', Float, nullable=False),
+            Column('old_precision', Float, nullable=False),
+            Column('new_precision', Float, nullable=False),
+            Column('old_recall', Float, nullable=False),
+            Column('new_recall', Float, nullable=False),
+            Column('old_f1_score', Float, nullable=False),
+            Column('new_f1_score', Float, nullable=False),
+            Column('old_roc_auc', Float),
+            Column('new_roc_auc', Float),
+            Column('created_at', DateTime, server_default=func.current_timestamp()),
+            Index('idx_retraining_developer', 'developer_id')
+        )
+
+        # 9. Deployments Table
+        deployments = Table('Deployments', metadata,
+            Column('id', Integer, primary_key=True, autoincrement=True),
+            Column('company_id', String(10), ForeignKey('Companies.id', ondelete='CASCADE'), nullable=False),
+            Column('model_id', Integer, ForeignKey('Models.id', ondelete='CASCADE'), nullable=False),
+            Column('deployed_by', Integer, ForeignKey('Developers.id', ondelete='CASCADE'), nullable=False),
+            Column('is_active', Boolean, server_default='1'),
+            Column('deployed_at', DateTime, server_default=func.current_timestamp()),
+            Column('undeployed_at', DateTime),
+            Index('idx_company_deployment', 'company_id', 'is_active'),
+            Index('idx_company_model_active', 'company_id', 'model_id', 'is_active'),
+            UniqueConstraint('company_id', 'is_active', name='unique_active_deployment')
+        )
+
+        # 10. Predictions Table
+        predictions = Table('Predictions', metadata,
+            Column('id', Integer, primary_key=True, autoincrement=True),
+            Column('user_id', Integer, ForeignKey('Users.id', ondelete='SET NULL')),
+            Column('developer_id', Integer, ForeignKey('Developers.id', ondelete='SET NULL')),
+            Column('company_id', String(10), ForeignKey('Companies.id', ondelete='CASCADE'), nullable=False),
+            Column('model_id', Integer, ForeignKey('Models.id', ondelete='CASCADE'), nullable=False),
+            Column('dataset_id', Integer, ForeignKey('Datasets.id', ondelete='SET NULL')),
+            Column('input_data', JSON, nullable=False),
+            Column('prediction_result', JSON, nullable=False),
+            Column('record_count', Integer, nullable=False, server_default='1'),
+            Column('created_at', DateTime, server_default=func.current_timestamp()),
+            Column('status', Enum('active', 'archived'), server_default='active'),
+            Index('idx_prediction_company', 'company_id'),
+            Index('idx_prediction_created', 'created_at'),
+            Index('idx_prediction_status', 'status')
+        )
+
+        # Create all tables
+        metadata.create_all(engine)
+        logger.info("All tables created successfully!")
+
+    except SQLAlchemyError as e:
+        logger.error(f"An error occurred while creating tables: {str(e)}")
+        raise
+
+def main():
+    try:
+        # Create database if it doesn't exist
+        engine = create_engine(f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}")
+        with engine.connect() as conn:
+            conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {DB_NAME}"))
+            conn.commit()
+            logger.info(f"Database '{DB_NAME}' created or already exists")
+
+        # Create tables
+        create_tables()
+
+    except Exception as e:
+        logger.error(f"An error occurred: {str(e)}")
+        raise
 
 if __name__ == "__main__":
-    print("Creating database for Company Registration System...")
-    create_database() 
+    main() 

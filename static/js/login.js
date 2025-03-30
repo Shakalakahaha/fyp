@@ -72,9 +72,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert('Login successful! Redirecting to dashboard...');
-                        // In a real application, redirect to dashboard
-                        // window.location.href = '/dashboard';
+                        // Redirect to the appropriate dashboard based on account type
+                        if (accountTypeSelect.value === 'developer') {
+                            window.location.href = '/dev_dashboard';
+                        } else {
+                            window.location.href = '/user_dashboard';
+                        }
                     } else {
                         alert('Login failed: ' + data.message);
                         // Reset button
