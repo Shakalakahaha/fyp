@@ -627,10 +627,7 @@ def dev_dashboard():
 def initialize_models():
     """Initialize default models and return their metrics."""
     try:
-        # Get developer ID from session
-        developer_id = session['user']['id']
-        
-        result = initialize_developer_environment(developer_id)
+        result = initialize_developer_environment()
         return jsonify(result), 200 if result['status'] == 'success' else 500
     except Exception as e:
         logger.error(f"Error initializing models: {str(e)}")

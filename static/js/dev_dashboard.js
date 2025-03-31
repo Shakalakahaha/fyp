@@ -11,17 +11,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             throw new Error('Failed to initialize models');
         }
 
-        // Then get the metrics
-        const metricsResponse = await fetch('/api/models/metrics');
-        if (!metricsResponse.ok) {
-            throw new Error('Failed to fetch metrics');
-        }
-
-        const metricsData = await metricsResponse.json();
-        if (metricsData.status === 'success') {
-            updateDashboard(metricsData.data);
+        const initData = await initResponse.json();
+        if (initData.status === 'success') {
+            updateDashboard(initData.data);
         } else {
-            console.error('Error fetching metrics:', metricsData.message);
+            console.error('Error initializing models:', initData.message);
+            alert('Error initializing models. Please check console for details.');
         }
     } catch (error) {
         console.error('Error initializing dashboard:', error);
@@ -31,17 +26,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 let performanceChart = null;
 
-function createPerformanceChart(ctx, modelNames, metrics) {
-    const accuracyData = metrics.map(m => m.accuracy);
-    const precisionData = metrics.map(m => m.precision);
-    const recallData = metrics.map(m => m.recall);
-    const f1Data = metrics.map(m => m.f1_score);
-    const rocAucData = metrics.map(m => m.roc_auc);
-
-    // Custom gradient for bars
-    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(54, 162, 235, 0.8)');
-    gradient.addColorStop(1, 'rgba(54, 162, 235, 0.2)');
+function createPerformanceChart(ctx, models) {
+    const modelNames = models.map(m => formatModelName(m.name));
+    const metrics = models.map(m => m.metrics);
 
     // Destroy existing chart if it exists
     if (performanceChart) {
@@ -54,15 +41,10 @@ function createPerformanceChart(ctx, modelNames, metrics) {
             labels: modelNames,
             datasets: [{
                 label: 'Accuracy',
-                data: accuracyData,
-                backgroundColor: gradient,
+                data: metrics.map(m => m.Accuracy),
+                backgroundColor: 'rgba(54, 162, 235, 0.8)',
                 borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 2,
-                borderRadius: 8,
-                barThickness: 40,
-                hoverBackgroundColor: 'rgba(54, 162, 235, 0.9)',
-                hoverBorderColor: 'rgba(54, 162, 235, 1)',
-                hoverBorderWidth: 3
+                borderWidth: 2
             }]
         },
         options: {
@@ -112,13 +94,13 @@ function createPerformanceChart(ctx, modelNames, metrics) {
                             return tooltipItems[0].label;
                         },
                         label: function(context) {
-                            const modelIndex = context.dataIndex;
+                            const modelMetrics = metrics[context.dataIndex];
                             return [
-                                `Accuracy: ${(accuracyData[modelIndex] * 100).toFixed(2)}%`,
-                                `Precision: ${(precisionData[modelIndex] * 100).toFixed(2)}%`,
-                                `Recall: ${(recallData[modelIndex] * 100).toFixed(2)}%`,
-                                `F1 Score: ${(f1Data[modelIndex] * 100).toFixed(2)}%`,
-                                rocAucData[modelIndex] ? `ROC AUC: ${(rocAucData[modelIndex] * 100).toFixed(2)}%` : null
+                                `Accuracy: ${(modelMetrics.Accuracy * 100).toFixed(2)}%`,
+                                `Precision: ${(modelMetrics.Precision * 100).toFixed(2)}%`,
+                                `Recall: ${(modelMetrics.Recall * 100).toFixed(2)}%`,
+                                `F1 Score: ${(modelMetrics['F1 Score'] * 100).toFixed(2)}%`,
+                                modelMetrics.AUC ? `AUC: ${(modelMetrics.AUC * 100).toFixed(2)}%` : null
                             ].filter(Boolean);
                         }
                     }
@@ -178,19 +160,20 @@ function createPerformanceChart(ctx, modelNames, metrics) {
     return performanceChart;
 }
 
-function updateDashboard(metrics) {
+function updateDashboard(models) {
     // Update table
     const tbody = document.querySelector('.model-table tbody');
     tbody.innerHTML = ''; // Clear existing rows
 
-    metrics.forEach(model => {
+    models.forEach(model => {
+        const metrics = model.metrics;
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${formatModelName(model.name)}</td>
-            <td>${(model.accuracy * 100).toFixed(2)}%</td>
-            <td>${(model.precision * 100).toFixed(2)}%</td>
-            <td>${(model.recall * 100).toFixed(2)}%</td>
-            <td>${(model.f1_score * 100).toFixed(2)}%</td>
+            <td>${(metrics.Accuracy * 100).toFixed(2)}%</td>
+            <td>${(metrics.Precision * 100).toFixed(2)}%</td>
+            <td>${(metrics.Recall * 100).toFixed(2)}%</td>
+            <td>${(metrics['F1 Score'] * 100).toFixed(2)}%</td>
             <td>
                 <button class="action-btn retrain">Retrain</button>
                 <button class="action-btn deploy" ${model.is_deployed ? 'disabled' : ''}>
@@ -202,9 +185,8 @@ function updateDashboard(metrics) {
     });
 
     // Update chart
-    const modelNames = metrics.map(m => formatModelName(m.name));
     const ctx = document.getElementById('performanceChart').getContext('2d');
-    createPerformanceChart(ctx, modelNames, metrics);
+    createPerformanceChart(ctx, models);
 
     // Reinitialize button event listeners
     initializeButtonListeners();
@@ -281,4 +263,17 @@ function handlePrediction(data) {
 function handleRetraining(modelName, newData) {
     // This function will be implemented to handle model retraining
     console.log(`Retraining ${modelName} with new data:`, newData);
-} 
+}
+
+// Add CSS for version badge
+const style = document.createElement('style');
+style.textContent = `
+    .version-badge {
+        background-color: #e0e0e0;
+        padding: 2px 6px;
+        border-radius: 12px;
+        font-size: 0.8em;
+        margin-left: 8px;
+    }
+`;
+document.head.appendChild(style); 
