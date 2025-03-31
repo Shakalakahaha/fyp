@@ -27,80 +27,87 @@ document.addEventListener('DOMContentLoaded', async function() {
 let performanceChart = null;
 
 function createPerformanceChart(ctx, models) {
+    console.log("Creating chart with models:", models);
+    
     const modelNames = models.map(m => formatModelName(m.name));
     const metrics = models.map(m => m.metrics);
 
-    // Destroy existing chart if it exists
     if (performanceChart) {
         performanceChart.destroy();
     }
+
+    // Create gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(65, 105, 225, 0.8)'); // Royal Blue
+    gradient.addColorStop(1, 'rgba(65, 105, 225, 0.1)');
 
     performanceChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: modelNames,
             datasets: [{
-                label: 'Accuracy',
-                data: metrics.map(m => m.Accuracy),
-                backgroundColor: 'rgba(54, 162, 235, 0.8)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 2
+                label: 'Model Performance',
+                data: metrics.map(metric => metric['Accuracy']),
+                backgroundColor: gradient,
+                borderColor: 'rgba(65, 105, 225, 1)',
+                borderWidth: 2,
+                borderRadius: 8,
+                barThickness: 50,
+                hoverBackgroundColor: 'rgba(65, 105, 225, 0.9)',
+                hoverBorderColor: 'rgba(65, 105, 225, 1)',
+                hoverBorderWidth: 3
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            layout: {
-                padding: {
-                    left: 20,
-                    right: 20,
-                    top: 20,
-                    bottom: 20
-                }
-            },
             plugins: {
-                legend: {
+                title: {
                     display: true,
-                    position: 'top',
-                    labels: {
-                        font: {
-                            size: 14,
-                            weight: 'bold'
-                        },
-                        padding: 20,
-                        usePointStyle: true,
-                        pointStyle: 'circle'
-                    }
+                    text: 'Model Performance Overview',
+                    font: {
+                        size: 18,
+                        weight: 'bold',
+                        family: "'Segoe UI', Arial, sans-serif"
+                    },
+                    padding: {
+                        top: 20,
+                        bottom: 20
+                    },
+                    color: '#2c3e50'
+                },
+                legend: {
+                    display: false
                 },
                 tooltip: {
                     enabled: true,
                     mode: 'index',
                     intersect: false,
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                    titleColor: '#333',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    titleColor: '#2c3e50',
                     titleFont: {
                         size: 16,
-                        weight: 'bold'
+                        weight: 'bold',
+                        family: "'Segoe UI', Arial, sans-serif"
                     },
-                    bodyColor: '#666',
+                    bodyColor: '#34495e',
                     bodyFont: {
-                        size: 14
+                        size: 14,
+                        family: "'Segoe UI', Arial, sans-serif"
                     },
-                    borderColor: '#ddd',
+                    borderColor: '#e0e0e0',
                     borderWidth: 1,
                     padding: 12,
+                    cornerRadius: 8,
                     callbacks: {
-                        title: function(tooltipItems) {
-                            return tooltipItems[0].label;
-                        },
                         label: function(context) {
                             const modelMetrics = metrics[context.dataIndex];
                             return [
-                                `Accuracy: ${(modelMetrics.Accuracy * 100).toFixed(2)}%`,
-                                `Precision: ${(modelMetrics.Precision * 100).toFixed(2)}%`,
-                                `Recall: ${(modelMetrics.Recall * 100).toFixed(2)}%`,
+                                `Accuracy: ${(modelMetrics['Accuracy'] * 100).toFixed(2)}%`,
+                                `Precision: ${(modelMetrics['Precision'] * 100).toFixed(2)}%`,
+                                `Recall: ${(modelMetrics['Recall'] * 100).toFixed(2)}%`,
                                 `F1 Score: ${(modelMetrics['F1 Score'] * 100).toFixed(2)}%`,
-                                modelMetrics.AUC ? `AUC: ${(modelMetrics.AUC * 100).toFixed(2)}%` : null
+                                modelMetrics['AUC'] ? `AUC: ${(modelMetrics['AUC'] * 100).toFixed(2)}%` : null
                             ].filter(Boolean);
                         }
                     }
@@ -119,19 +126,27 @@ function createPerformanceChart(ctx, models) {
                         callback: function(value) {
                             return (value * 100).toFixed(0) + '%';
                         },
+                        stepSize: 0.1, // This will create 10% steps
                         font: {
-                            size: 12
+                            size: 12,
+                            family: "'Segoe UI', Arial, sans-serif"
                         },
-                        padding: 10
+                        padding: 10,
+                        color: '#2c3e50'
                     },
                     title: {
                         display: true,
                         text: 'Accuracy Score',
                         font: {
                             size: 14,
-                            weight: 'bold'
+                            weight: 'bold',
+                            family: "'Segoe UI', Arial, sans-serif"
                         },
-                        padding: 20
+                        padding: {
+                            top: 20,
+                            bottom: 10
+                        },
+                        color: '#2c3e50'
                     }
                 },
                 x: {
@@ -140,19 +155,17 @@ function createPerformanceChart(ctx, models) {
                     },
                     ticks: {
                         font: {
-                            size: 12
+                            size: 12,
+                            family: "'Segoe UI', Arial, sans-serif"
                         },
-                        padding: 10
+                        padding: 10,
+                        color: '#2c3e50'
                     }
                 }
             },
             animation: {
-                duration: 1000,
+                duration: 1500,
                 easing: 'easeInOutQuart'
-            },
-            hover: {
-                mode: 'index',
-                intersect: false
             }
         }
     });
@@ -161,35 +174,14 @@ function createPerformanceChart(ctx, models) {
 }
 
 function updateDashboard(models) {
-    // Update table
-    const tbody = document.querySelector('.model-table tbody');
-    tbody.innerHTML = ''; // Clear existing rows
+    console.log("Received models data:", models); // Debug log
 
-    models.forEach(model => {
-        const metrics = model.metrics;
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${formatModelName(model.name)}</td>
-            <td>${(metrics.Accuracy * 100).toFixed(2)}%</td>
-            <td>${(metrics.Precision * 100).toFixed(2)}%</td>
-            <td>${(metrics.Recall * 100).toFixed(2)}%</td>
-            <td>${(metrics['F1 Score'] * 100).toFixed(2)}%</td>
-            <td>
-                <button class="action-btn retrain">Retrain</button>
-                <button class="action-btn deploy" ${model.is_deployed ? 'disabled' : ''}>
-                    ${model.is_deployed ? 'Deployed' : 'Deploy'}
-                </button>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-
-    // Update chart
+    // Update chart only
     const ctx = document.getElementById('performanceChart').getContext('2d');
     createPerformanceChart(ctx, models);
 
-    // Reinitialize button event listeners
-    initializeButtonListeners();
+    // Initialize modal event listener
+    initializeModalListeners();
 }
 
 function formatModelName(name) {
@@ -198,82 +190,30 @@ function formatModelName(name) {
         .join(' ');
 }
 
-function initializeButtonListeners() {
-    // Add event listeners for buttons
-    document.querySelectorAll('.action-btn.retrain').forEach(button => {
-        button.addEventListener('click', function() {
-            const modelName = this.closest('tr').querySelector('td:first-child').textContent;
-            handleRetraining(modelName);
-        });
-    });
-
-    document.querySelectorAll('.action-btn.deploy').forEach(button => {
-        button.addEventListener('click', function() {
-            const modelName = this.closest('tr').querySelector('td:first-child').textContent;
-            handleDeployment(modelName);
-        });
-    });
-
+function initializeModalListeners() {
     // Quick action buttons
-    document.getElementById('predictBtn').addEventListener('click', function() {
-        handlePrediction();
-    });
-
     document.getElementById('retrainBtn').addEventListener('click', function() {
-        handleQuickRetrain();
+        openRetrainingModal();
     });
 }
 
-async function handleRetraining(modelName) {
-    alert(`Retrain functionality will be implemented for ${modelName}`);
+function openRetrainingModal() {
+    const modal = document.getElementById('retrainingModal');
+    modal.style.display = 'block';
 }
 
-async function handleDeployment(modelName) {
-    alert(`Deploy functionality will be implemented for ${modelName}`);
-}
+// Close modal when clicking the close button or outside the modal
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('retrainingModal');
+    const closeBtn = document.getElementsByClassName('close')[0];
 
-async function handlePrediction() {
-    alert('Prediction functionality will be implemented');
-}
-
-async function handleQuickRetrain() {
-    alert('Quick retrain functionality will be implemented');
-}
-
-// Function to update the performance metrics
-function updateMetrics(modelName, newMetrics) {
-    // This function will be implemented to update the table and chart
-    // when new metrics are available after retraining
-    console.log(`Updating metrics for ${modelName}`, newMetrics);
-}
-
-// Function to handle model deployment
-function deployModel(modelName) {
-    // This function will be implemented to handle model deployment
-    console.log(`Deploying model: ${modelName}`);
-}
-
-// Function to handle prediction
-function handlePrediction(data) {
-    // This function will be implemented to handle predictions
-    console.log('Handling prediction with data:', data);
-}
-
-// Function to handle model retraining
-function handleRetraining(modelName, newData) {
-    // This function will be implemented to handle model retraining
-    console.log(`Retraining ${modelName} with new data:`, newData);
-}
-
-// Add CSS for version badge
-const style = document.createElement('style');
-style.textContent = `
-    .version-badge {
-        background-color: #e0e0e0;
-        padding: 2px 6px;
-        border-radius: 12px;
-        font-size: 0.8em;
-        margin-left: 8px;
+    closeBtn.onclick = function() {
+        modal.style.display = 'none';
     }
-`;
-document.head.appendChild(style); 
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+}); 

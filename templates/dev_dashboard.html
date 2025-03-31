@@ -14,86 +14,10 @@
         </header>
 
         <main>
-            <!-- Model Performance Overview Section -->
-            <section class="performance-overview">
-                <h2>Model Performance Overview</h2>
-                <div class="model-table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Model</th>
-                                <th>Accuracy</th>
-                                <th>Precision</th>
-                                <th>Recall</th>
-                                <th>F1 Score</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Decision Tree</td>
-                                <td>0.85</td>
-                                <td>0.83</td>
-                                <td>0.86</td>
-                                <td>0.84</td>
-                                <td>
-                                    <button class="action-btn retrain">Retrain</button>
-                                    <button class="action-btn deploy">Deploy</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>GBM</td>
-                                <td>0.88</td>
-                                <td>0.87</td>
-                                <td>0.89</td>
-                                <td>0.88</td>
-                                <td>
-                                    <button class="action-btn retrain">Retrain</button>
-                                    <button class="action-btn deploy">Deploy</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Logistic Regression</td>
-                                <td>0.82</td>
-                                <td>0.81</td>
-                                <td>0.83</td>
-                                <td>0.82</td>
-                                <td>
-                                    <button class="action-btn retrain">Retrain</button>
-                                    <button class="action-btn deploy">Deploy</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Random Forest</td>
-                                <td>0.87</td>
-                                <td>0.86</td>
-                                <td>0.88</td>
-                                <td>0.87</td>
-                                <td>
-                                    <button class="action-btn retrain">Retrain</button>
-                                    <button class="action-btn deploy">Deploy</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Neural Network</td>
-                                <td>0.89</td>
-                                <td>0.88</td>
-                                <td>0.90</td>
-                                <td>0.89</td>
-                                <td>
-                                    <button class="action-btn retrain">Retrain</button>
-                                    <button class="action-btn deploy">Deploy</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
             <!-- Performance Graph Section -->
             <section class="performance-graph">
-                <h2>Model Performance Comparison</h2>
-                <div class="graph-container">
+                <h2>Model Performance Overview</h2>
+                <div class="chart-container">
                     <canvas id="performanceChart"></canvas>
                 </div>
             </section>
@@ -116,6 +40,20 @@
             </section>
         </main>
     </div>
+
+    <!-- Add the retraining modal -->
+    <div id="retrainingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close">&times;</span>
+                <h2>Start Retraining</h2>
+            </div>
+            <div class="modal-body">
+                <!-- Modal content will be added later -->
+            </div>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='js/dev_dashboard.js') }}"></script>
 </body>
 </html> 
