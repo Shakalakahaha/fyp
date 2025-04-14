@@ -46,7 +46,7 @@ def ensure_directories():
         os.path.join(DATASETS_DIR, 'original'),
         RETRAINED_MODELS_DIR
     ]
-    
+
     for directory in directories:
         if not os.path.exists(directory):
             os.makedirs(directory)
@@ -54,19 +54,19 @@ def ensure_directories():
 
 def initialize_system_company():
     """Initialize the system company if it doesn't exist.
-    
+
     This is necessary because the database schema requires a valid company_id for models and datasets.
     The system company is a placeholder that owns the default models and original dataset.
     """
     engine = create_engine(DATABASE_URL)
-    
+
     try:
         with engine.connect() as conn:
             # Check if system company already exists
             result = conn.execute(text("""
                 SELECT id FROM companies WHERE id = :company_id
             """), {'company_id': DEFAULT_COMPANY_ID})
-            
+
             if not result.fetchone():
                 # Insert the system company
                 conn.execute(text("""
@@ -77,14 +77,14 @@ def initialize_system_company():
                     'name': DEFAULT_COMPANY_NAME,
                     'email': DEFAULT_COMPANY_EMAIL
                 })
-                
+
                 conn.commit()
                 logger.info(f"Initialized system company with ID: {DEFAULT_COMPANY_ID}")
                 return True
             else:
                 logger.info(f"System company already exists with ID: {DEFAULT_COMPANY_ID}")
                 return False
-    
+
     except Exception as e:
         logger.error(f"Error initializing system company: {str(e)}")
         raise
@@ -93,17 +93,17 @@ def load_model_metadata(metadata_file):
     """Load model metadata from pkl file."""
     # Convert relative path to absolute for file operations
     absolute_path = os.path.abspath(metadata_file)
-    
+
     try:
         with open(absolute_path, 'rb') as f:
             metadata = pickle.load(f)
-            
+
             # Extract the model name from the file path
             model_name = os.path.basename(metadata_file).replace('_metadata.pkl', '')
-            
+
             # Extract metrics from the metadata
             metrics = metadata.get('metrics', {})
-            
+
             # Convert metrics keys to lowercase and standardize names
             standardized_metrics = {
                 'accuracy': metrics.get('Accuracy', 0.0),
@@ -112,7 +112,7 @@ def load_model_metadata(metadata_file):
                 'f1_score': metrics.get('F1 Score', 0.0),
                 'auc': metrics.get('AUC', 0.0)
             }
-            
+
             return {
                 'name': model_name,
                 'metrics': standardized_metrics,
@@ -131,9 +131,9 @@ def register_model_types():
         {'name': 'Logistic Regression', 'description': 'Statistical model that uses a logistic function for classification'},
         {'name': 'Decision Tree', 'description': 'Tree-like model of decisions for classification'}
     ]
-    
+
     engine = create_engine(DATABASE_URL)
-    
+
     try:
         with engine.connect() as conn:
             for model_type in model_types:
@@ -141,19 +141,19 @@ def register_model_types():
                 result = conn.execute(text("""
                     SELECT id FROM modeltypes WHERE name = :name
                 """), {'name': model_type['name']})
-                
+
                 if not result.fetchone():
                     # Insert the model type
                     conn.execute(text("""
                         INSERT INTO modeltypes (name, description)
                         VALUES (:name, :description)
                     """), model_type)
-                    
-                    conn.commit()
                     logger.info(f"Registered model type: {model_type['name']}")
                 else:
                     logger.info(f"Model type {model_type['name']} already exists")
-    
+
+            conn.commit()
+
     except Exception as e:
         logger.error(f"Error registering model types: {str(e)}")
         raise
@@ -168,25 +168,25 @@ def get_model_type_id(model_name):
         'logistic_regression': 'Logistic Regression',
         'decision_tree': 'Decision Tree'
     }
-    
+
     # Get the model type name from the mapping
     model_type_name = model_type_mapping.get(model_name, model_name)
-    
+
     engine = create_engine(DATABASE_URL)
-    
+
     try:
         with engine.connect() as conn:
             result = conn.execute(text("""
                 SELECT id FROM modeltypes WHERE name = :name
             """), {'name': model_type_name})
-            
+
             row = result.fetchone()
-            
+
             if row:
                 return row[0]
             else:
                 raise ValueError(f"Model type '{model_type_name}' not found in the database")
-    
+
     except Exception as e:
         logger.error(f"Error getting model type ID: {str(e)}")
         raise
@@ -194,31 +194,31 @@ def get_model_type_id(model_name):
 def initialize_original_dataset():
     """Initialize the original dataset (DatasetA.csv) as a shared resource."""
     engine = create_engine(DATABASE_URL)
-    
+
     try:
         # Check if the original dataset file exists (using absolute path for file check)
         if not os.path.exists(os.path.abspath(ORIGINAL_DATASET)):
             raise FileNotFoundError(f"Original dataset not found at {ORIGINAL_DATASET}")
-        
+
         # Use relative path for database record
         dataset_path = ORIGINAL_DATASET
-        
+
         with engine.connect() as conn:
             # Check if dataset already exists
             result = conn.execute(text("""
-                SELECT id FROM datasets 
+                SELECT id FROM datasets
                 WHERE company_id = :company_id AND is_original = 1
             """), {'company_id': DEFAULT_COMPANY_ID})
-            
+
             if not result.fetchone():
                 # Insert the dataset record
                 conn.execute(text("""
                     INSERT INTO datasets (
-                        company_id, name, file_path, 
+                        company_id, name, file_path,
                         is_original, is_uploaded, is_combined,
                         created_at
                     ) VALUES (
-                        :company_id, :name, :path, 
+                        :company_id, :name, :path,
                         1, 0, 0, CURRENT_TIMESTAMP
                     )
                 """), {
@@ -226,37 +226,37 @@ def initialize_original_dataset():
                     'name': 'DatasetA',
                     'path': dataset_path
                 })
-                
+
                 conn.commit()
                 logger.info(f"Initialized original dataset: {dataset_path}")
                 return True
             else:
                 logger.info(f"Original dataset already exists")
                 return False
-    
+
     except Exception as e:
         logger.error(f"Error initializing original dataset: {str(e)}")
         raise
 
 def register_default_models():
     """Register all default models in the database.
-    
+
     These models will be shared resources available to all companies.
     They're linked to the system company to satisfy foreign key constraints.
     """
     engine = create_engine(DATABASE_URL)
-    
+
     try:
         # Get all model files from the default models directory
         model_files = {}
-        
+
         # Need to use absolute path for directory listing
         abs_default_models_dir = os.path.abspath(DEFAULT_MODELS_DIR)
-        
+
         for file in os.listdir(abs_default_models_dir):
             if file.endswith('.pkl'):
                 model_name = file.replace('.pkl', '')
-                
+
                 if not model_name.endswith('_metadata'):
                     metadata_file = f"{model_name}_metadata.pkl"
                     if os.path.exists(os.path.join(abs_default_models_dir, metadata_file)):
@@ -264,30 +264,30 @@ def register_default_models():
                             'model': file,
                             'metadata': metadata_file
                         }
-        
+
         # Register each model in the database
         for model_name, files in model_files.items():
             # Use relative paths for database records
             model_path = os.path.join(DEFAULT_MODELS_DIR, files['model'])
             metadata_path = os.path.join(DEFAULT_MODELS_DIR, files['metadata'])
-            
+
             # Load the metadata - we pass the absolute path for loading the file
             metadata = load_model_metadata(os.path.join(abs_default_models_dir, files['metadata']))
             metrics = metadata['metrics']
-            
+
             # Get the model type ID
             model_type_id = get_model_type_id(model_name)
-            
+
             with engine.connect() as conn:
                 # Check if the model already exists
                 result = conn.execute(text("""
-                    SELECT id FROM models 
+                    SELECT id FROM models
                     WHERE company_id = :company_id AND model_type_id = :model_type_id AND version = '1'
                 """), {
                     'company_id': DEFAULT_COMPANY_ID,
                     'model_type_id': model_type_id
                 })
-                
+
                 if not result.fetchone():
                     # Insert the model record with relative path
                     conn.execute(text("""
@@ -304,18 +304,18 @@ def register_default_models():
                         'path': model_path,
                         'company_id': DEFAULT_COMPANY_ID
                     })
-                    
+
                     # Get the model ID
                     result = conn.execute(text("""
-                        SELECT id FROM models 
+                        SELECT id FROM models
                         WHERE company_id = :company_id AND model_type_id = :model_type_id AND version = '1'
                     """), {
                         'company_id': DEFAULT_COMPANY_ID,
                         'model_type_id': model_type_id
                     })
-                    
+
                     model_id = result.fetchone()[0]
-                    
+
                     # Insert the model metrics - Use backticks around 'precision' since it's a reserved keyword
                     conn.execute(text("""
                         INSERT INTO modelmetrics (
@@ -334,46 +334,46 @@ def register_default_models():
                         'auc_roc': metrics['auc'],
                         'additional_metrics': json.dumps(metadata['raw_metadata'])
                     })
-                    
+
                     conn.commit()
                     logger.info(f"Registered default model {model_name}")
                 else:
                     logger.info(f"Default model {model_name} already exists")
-        
+
         return True
-    
+
     except Exception as e:
         logger.error(f"Error registering default models: {str(e)}")
         raise
 
 def initialize_system():
     """Initialize the system with default models and dataset.
-    
+
     This is the main function that performs the complete system initialization.
     It needs to be run once before the application is used.
     """
     try:
         # Ensure all required directories exist
         ensure_directories()
-        
+
         # Initialize system company (needed for foreign key constraints)
         initialize_system_company()
-        
+
         # Register model types
         register_model_types()
-        
+
         # Initialize the original dataset
         initialize_original_dataset()
-        
+
         # Register default models
         register_default_models()
-        
+
         logger.info(f"Successfully initialized system with default models and dataset")
         return {
             'status': 'success',
             'message': f"System initialized successfully with default models and dataset"
         }
-    
+
     except Exception as e:
         logger.error(f"Error initializing system: {str(e)}")
         return {
@@ -381,7 +381,73 @@ def initialize_system():
             'message': f"Error initializing system: {str(e)}"
         }
 
+# Add these functions to match imports in app.py
+def initialize_default_models():
+    """Initialize the default models for the system."""
+    return initialize_system()
+
+def get_model_metrics(developer_id):
+    """Get metrics for all models accessible by a developer."""
+    engine = create_engine(DATABASE_URL)
+
+    try:
+        with engine.connect() as conn:
+            # Get company ID for the developer
+            result = conn.execute(text("""
+                SELECT company_id FROM developers WHERE id = :developer_id
+            """), {'developer_id': developer_id})
+
+            row = result.fetchone()
+            if not row:
+                raise ValueError(f"Developer with ID {developer_id} not found")
+
+            company_id = row[0]
+
+            # Get all models for this company and the system company
+            result = conn.execute(text("""
+                SELECT m.id, m.name, m.version, m.is_default, mt.name as model_type,
+                       mm.accuracy, mm.`precision`, mm.recall, mm.f1_score, mm.auc_roc,
+                       EXISTS(
+                           SELECT 1 FROM modeldeployments md
+                           WHERE md.model_id = m.id AND md.is_active = 1
+                       ) as is_deployed
+                FROM models m
+                JOIN modeltypes mt ON m.model_type_id = mt.id
+                LEFT JOIN modelmetrics mm ON m.id = mm.model_id
+                WHERE (m.company_id = :company_id OR m.company_id = :system_company_id)
+                ORDER BY m.name, m.version DESC
+            """), {
+                'company_id': company_id,
+                'system_company_id': DEFAULT_COMPANY_ID
+            })
+
+            metrics = []
+            for row in result.mappings():
+                metrics.append({
+                    'id': row['id'],
+                    'name': row['name'],
+                    'version': row['version'],
+                    'model_type': row['model_type'],
+                    'is_default': bool(row['is_default']),
+                    'accuracy': float(row['accuracy']) if row['accuracy'] is not None else None,
+                    'precision': float(row['precision']) if row['precision'] is not None else None,
+                    'recall': float(row['recall']) if row['recall'] is not None else None,
+                    'f1_score': float(row['f1_score']) if row['f1_score'] is not None else None,
+                    'auc_roc': float(row['auc_roc']) if row['auc_roc'] is not None else None,
+                    'is_deployed': bool(row['is_deployed'])
+                })
+
+            return metrics
+
+    except Exception as e:
+        logger.error(f"Error getting model metrics: {str(e)}")
+        raise
+
+def initialize_developer_environment():
+    """Initialize the environment for a developer."""
+    return initialize_system()
+
 if __name__ == '__main__':
     # Initialize the system (only needs to be run once)
     result = initialize_system()
-    print("System initialization result:", result) 
+    print("System initialization result:", result)

@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Developer Dashboard - Churn Buster</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dev_dashboard.css') }}">
+    <title>User Dashboard - Churn Buster</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/user_dashboard.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -14,7 +14,7 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <h2>Churn Buster</h2>
-                <p>Developer Portal</p>
+                <p>User Portal</p>
             </div>
 
             <nav class="sidebar-nav">
@@ -23,18 +23,6 @@
                         <a href="#" id="nav-dashboard">
                             <i class="fas fa-tachometer-alt"></i>
                             <span>Dashboard</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" id="nav-retrain">
-                            <i class="fas fa-sync-alt"></i>
-                            <span>Retrain Model</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" id="nav-manage">
-                            <i class="fas fa-cogs"></i>
-                            <span>Manage Models</span>
                         </a>
                     </li>
                     <li>
@@ -68,7 +56,7 @@
                     <button id="sidebar-toggle" class="sidebar-toggle">
                         <i class="fas fa-bars"></i>
                     </button>
-                    <h1>Developer Dashboard</h1>
+                    <h1>User Dashboard</h1>
                 </div>
                 <div class="header-right">
                     <div class="user-info">
@@ -80,33 +68,29 @@
 
             <!-- Dashboard Content -->
             <div class="content-container" id="dashboard-content">
+                <!-- Welcome Card -->
+                <section class="card welcome-card">
+                    <div class="card-body">
+                        <h2>Welcome to Churn Buster</h2>
+                        <p>Your customer churn prediction platform. Use the available models to predict customer churn and take proactive measures to retain your customers.</p>
+                    </div>
+                </section>
+
                 <!-- Quick Actions -->
                 <section class="card quick-actions">
                     <div class="card-header">
                         <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
                     </div>
                     <div class="card-body">
-                        <div class="action-grid">
-                            <div class="action-card">
-                                <div class="action-icon">
-                                    <i class="fas fa-sync-alt"></i>
-                                </div>
-                                <h3>Retrain Model</h3>
-                                <p>Upload new dataset to retrain and improve model performance</p>
-                                <button id="retrainBtn" class="action-button primary">
-                                    <i class="fas fa-play"></i> Start Retraining
-                                </button>
+                        <div class="action-card">
+                            <div class="action-icon">
+                                <i class="fas fa-chart-line"></i>
                             </div>
-                            <div class="action-card">
-                                <div class="action-icon">
-                                    <i class="fas fa-chart-line"></i>
-                                </div>
-                                <h3>Make Prediction</h3>
-                                <p>Upload customer data to predict churn probability</p>
-                                <button id="predictBtn" class="action-button primary">
-                                    <i class="fas fa-play"></i> Start Prediction
-                                </button>
-                            </div>
+                            <h3>Make Prediction</h3>
+                            <p>Upload customer data to predict churn probability</p>
+                            <button id="predictBtn" class="action-button primary">
+                                <i class="fas fa-play"></i> Start Prediction
+                            </button>
                         </div>
                     </div>
                 </section>
@@ -142,18 +126,6 @@
             </div>
 
             <!-- Other content sections will be hidden initially -->
-            <div class="content-container hidden" id="retrain-content">
-                <!-- Retrain Model content will be implemented later -->
-                <h2>Retrain Model</h2>
-                <p>This section will be implemented later.</p>
-            </div>
-
-            <div class="content-container hidden" id="manage-content">
-                <!-- Manage Models content will be implemented later -->
-                <h2>Manage Models</h2>
-                <p>This section will be implemented later.</p>
-            </div>
-
             <div class="content-container hidden" id="predict-content">
                 <!-- Predict Churn content will be implemented later -->
                 <h2>Predict Churn</h2>
@@ -168,24 +140,6 @@
         </main>
     </div>
 
-    <!-- Modals -->
-    <div id="retrainingModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-sync-alt"></i> Start Retraining</h2>
-                <span class="close">&times;</span>
-            </div>
-            <div class="modal-body">
-                <!-- Modal content will be added later -->
-                <p>Retraining functionality will be implemented later.</p>
-            </div>
-            <div class="modal-footer">
-                <button class="modal-button secondary" id="cancelRetrainBtn">Cancel</button>
-                <button class="modal-button primary" id="confirmRetrainBtn">Proceed</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="{{ url_for('static', filename='js/dev_dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/user_dashboard.js') }}"></script>
 </body>
 </html>

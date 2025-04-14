@@ -1,22 +1,22 @@
 /* Global Styles and Variables */
 :root {
-    /* Developer Dashboard Theme Colors */
-    --dev-primary: #2563eb;         /* Blue 600 */
-    --dev-primary-dark: #1d4ed8;    /* Blue 700 */
-    --dev-secondary: #4f46e5;       /* Indigo 600 */
-    --dev-accent: #8b5cf6;          /* Violet 500 */
-    --dev-success: #10b981;         /* Emerald 500 */
-    --dev-warning: #f59e0b;         /* Amber 500 */
-    --dev-danger: #ef4444;          /* Red 500 */
-    --dev-background: #f9fafb;      /* Gray 50 */
-    --dev-card-bg: #ffffff;         /* White */
-    --dev-sidebar-bg: #1e293b;      /* Slate 800 */
-    --dev-sidebar-text: #f1f5f9;    /* Slate 100 */
-    --dev-text-primary: #1e293b;    /* Slate 800 */
-    --dev-text-secondary: #64748b;  /* Slate 500 */
-    --dev-border: #e2e8f0;          /* Slate 200 */
-    --dev-hover: #f1f5f9;           /* Slate 100 */
-
+    /* User Dashboard Theme Colors - Using a teal/green palette */
+    --user-primary: #0d9488;         /* Teal 600 */
+    --user-primary-dark: #0f766e;    /* Teal 700 */
+    --user-secondary: #059669;       /* Emerald 600 */
+    --user-accent: #10b981;          /* Emerald 500 */
+    --user-success: #22c55e;         /* Green 500 */
+    --user-warning: #f59e0b;         /* Amber 500 */
+    --user-danger: #ef4444;          /* Red 500 */
+    --user-background: #f0fdfa;      /* Teal 50 */
+    --user-card-bg: #ffffff;         /* White */
+    --user-sidebar-bg: #134e4a;      /* Teal 900 */
+    --user-sidebar-text: #f0fdfa;    /* Teal 50 */
+    --user-text-primary: #134e4a;    /* Teal 900 */
+    --user-text-secondary: #5eead4;  /* Teal 300 */
+    --user-border: #ccfbf1;          /* Teal 100 */
+    --user-hover: #f0fdfa;           /* Teal 50 */
+    
     /* Common Styles */
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -32,8 +32,8 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--dev-background);
-    color: var(--dev-text-primary);
+    background-color: var(--user-background);
+    color: var(--user-text-primary);
     line-height: 1.6;
     height: 100vh;
     overflow-x: hidden;
@@ -51,8 +51,8 @@ body {
 .sidebar {
     width: 260px;
     height: 100vh;
-    background-color: var(--dev-sidebar-bg);
-    color: var(--dev-sidebar-text);
+    background-color: var(--user-sidebar-bg);
+    color: var(--user-sidebar-text);
     display: flex;
     flex-direction: column;
     transition: var(--transition);
@@ -94,7 +94,7 @@ body {
     display: flex;
     align-items: center;
     padding: 0.75rem 1.5rem;
-    color: var(--dev-sidebar-text);
+    color: var(--user-sidebar-text);
     text-decoration: none;
     transition: var(--transition);
     border-left: 3px solid transparent;
@@ -106,7 +106,7 @@ body {
 
 .sidebar-nav li.active a {
     background-color: rgba(255, 255, 255, 0.1);
-    border-left-color: var(--dev-primary);
+    border-left-color: var(--user-accent);
 }
 
 .sidebar-nav i {
@@ -124,7 +124,7 @@ body {
 .logout-btn {
     display: flex;
     align-items: center;
-    color: var(--dev-sidebar-text);
+    color: var(--user-sidebar-text);
     text-decoration: none;
     padding: 0.5rem 0;
     margin-bottom: 0.5rem;
@@ -132,7 +132,7 @@ body {
 }
 
 .logout-btn:hover {
-    color: var(--dev-danger);
+    color: var(--user-danger);
 }
 
 .logout-btn i {
@@ -150,7 +150,7 @@ body {
     flex: 1;
     overflow-y: auto;
     height: 100vh;
-    background-color: var(--dev-background);
+    background-color: var(--user-background);
     transition: var(--transition);
 }
 
@@ -159,8 +159,8 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 1rem 2rem;
-    background-color: var(--dev-card-bg);
-    border-bottom: 1px solid var(--dev-border);
+    background-color: var(--user-card-bg);
+    border-bottom: 1px solid var(--user-border);
     box-shadow: var(--shadow-sm);
 }
 
@@ -172,7 +172,7 @@ body {
 .sidebar-toggle {
     background: none;
     border: none;
-    color: var(--dev-text-primary);
+    color: var(--user-text-primary);
     font-size: 1.25rem;
     cursor: pointer;
     margin-right: 1rem;
@@ -182,7 +182,7 @@ body {
 .content-header h1 {
     font-size: 1.5rem;
     font-weight: 600;
-    color: var(--dev-text-primary);
+    color: var(--user-text-primary);
 }
 
 .user-info {
@@ -193,12 +193,12 @@ body {
 
 .user-info span {
     font-size: 0.875rem;
-    color: var(--dev-text-secondary);
+    color: var(--user-text-primary);
 }
 
 .user-info i {
     font-size: 1.5rem;
-    color: var(--dev-primary);
+    color: var(--user-primary);
 }
 
 /* Content Container */
@@ -212,7 +212,7 @@ body {
 
 /* Card Styles */
 .card {
-    background-color: var(--dev-card-bg);
+    background-color: var(--user-card-bg);
     border-radius: 0.5rem;
     box-shadow: var(--shadow-md);
     margin-bottom: 1.5rem;
@@ -227,7 +227,7 @@ body {
 
 .card-header {
     padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid var(--dev-border);
+    border-bottom: 1px solid var(--user-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -236,7 +236,7 @@ body {
 .card-header h2 {
     font-size: 1.25rem;
     font-weight: 600;
-    color: var(--dev-text-primary);
+    color: var(--user-text-primary);
     margin: 0;
     display: flex;
     align-items: center;
@@ -244,11 +244,30 @@ body {
 
 .card-header h2 i {
     margin-right: 0.5rem;
-    color: var(--dev-primary);
+    color: var(--user-primary);
 }
 
 .card-body {
     padding: 1.5rem;
+}
+
+/* Welcome Card */
+.welcome-card {
+    background: linear-gradient(135deg, var(--user-primary), var(--user-secondary));
+    color: white;
+    margin-bottom: 2rem;
+}
+
+.welcome-card h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: white;
+}
+
+.welcome-card p {
+    opacity: 0.9;
+    font-size: 1rem;
+    max-width: 800px;
 }
 
 /* Chart Container */
@@ -264,20 +283,21 @@ body {
 }
 
 /* Quick Actions */
-.action-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
+.quick-actions .card-body {
+    display: flex;
+    justify-content: center;
 }
 
 .action-card {
-    background-color: var(--dev-card-bg);
+    background-color: var(--user-card-bg);
     border-radius: 0.5rem;
     padding: 1.5rem;
     text-align: center;
     box-shadow: var(--shadow-sm);
     transition: var(--transition);
-    border: 1px solid var(--dev-border);
+    border: 1px solid var(--user-border);
+    max-width: 400px;
+    width: 100%;
 }
 
 .action-card:hover {
@@ -288,7 +308,7 @@ body {
 .action-icon {
     width: 3.5rem;
     height: 3.5rem;
-    background-color: rgba(37, 99, 235, 0.1);
+    background-color: rgba(13, 148, 136, 0.1);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -298,18 +318,18 @@ body {
 
 .action-icon i {
     font-size: 1.5rem;
-    color: var(--dev-primary);
+    color: var(--user-primary);
 }
 
 .action-card h3 {
     font-size: 1.25rem;
     font-weight: 600;
     margin-bottom: 0.75rem;
-    color: var(--dev-text-primary);
+    color: var(--user-text-primary);
 }
 
 .action-card p {
-    color: var(--dev-text-secondary);
+    color: var(--user-text-primary);
     margin-bottom: 1.5rem;
     font-size: 0.875rem;
 }
@@ -333,22 +353,22 @@ body {
 }
 
 .action-button.primary {
-    background-color: var(--dev-primary);
+    background-color: var(--user-primary);
     color: white;
 }
 
 .action-button.primary:hover {
-    background-color: var(--dev-primary-dark);
+    background-color: var(--user-primary-dark);
 }
 
 .action-button.secondary {
     background-color: transparent;
-    border: 1px solid var(--dev-border);
-    color: var(--dev-text-primary);
+    border: 1px solid var(--user-border);
+    color: var(--user-text-primary);
 }
 
 .action-button.secondary:hover {
-    background-color: var(--dev-hover);
+    background-color: var(--user-hover);
 }
 
 /* Models Table */
@@ -365,17 +385,17 @@ body {
 .models-table td {
     padding: 0.75rem 1rem;
     text-align: left;
-    border-bottom: 1px solid var(--dev-border);
+    border-bottom: 1px solid var(--user-border);
 }
 
 .models-table th {
     font-weight: 600;
-    color: var(--dev-text-primary);
-    background-color: var(--dev-hover);
+    color: var(--user-text-primary);
+    background-color: var(--user-hover);
 }
 
 .models-table tbody tr:hover {
-    background-color: var(--dev-hover);
+    background-color: var(--user-hover);
 }
 
 .models-table td:last-child {
@@ -392,113 +412,12 @@ body {
 
 .status-badge.active {
     background-color: rgba(16, 185, 129, 0.1);
-    color: var(--dev-success);
+    color: var(--user-success);
 }
 
 .status-badge.inactive {
     background-color: rgba(239, 68, 68, 0.1);
-    color: var(--dev-danger);
-}
-
-/* Modal Styles */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    transition: var(--transition);
-}
-
-.modal-content {
-    background-color: var(--dev-card-bg);
-    margin: 10% auto;
-    padding: 0;
-    border-radius: 0.5rem;
-    width: 90%;
-    max-width: 600px;
-    box-shadow: var(--shadow-lg);
-    overflow: hidden;
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.25rem 1.5rem;
-    background-color: var(--dev-primary);
-    color: white;
-}
-
-.modal-header h2 {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: white;
-    display: flex;
-    align-items: center;
-}
-
-.modal-header h2 i {
-    margin-right: 0.5rem;
-}
-
-.modal-header .close {
-    color: white;
-    font-size: 1.5rem;
-    font-weight: 700;
-    cursor: pointer;
-    opacity: 0.8;
-    transition: var(--transition);
-}
-
-.modal-header .close:hover {
-    opacity: 1;
-}
-
-.modal-body {
-    padding: 1.5rem;
-}
-
-.modal-footer {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid var(--dev-border);
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.75rem;
-}
-
-.modal-button {
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
-    font-weight: 500;
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: var(--transition);
-    border: none;
-}
-
-.modal-button.primary {
-    background-color: var(--dev-primary);
-    color: white;
-}
-
-.modal-button.primary:hover {
-    background-color: var(--dev-primary-dark);
-}
-
-.modal-button.secondary {
-    background-color: transparent;
-    border: 1px solid var(--dev-border);
-    color: var(--dev-text-primary);
-}
-
-.modal-button.secondary:hover {
-    background-color: var(--dev-hover);
+    color: var(--user-danger);
 }
 
 /* Responsive Design */
@@ -512,30 +431,26 @@ body {
     .app-container {
         position: relative;
     }
-
+    
     .sidebar {
         position: absolute;
         left: -260px;
         z-index: 1000;
     }
-
+    
     .sidebar.active {
         left: 0;
     }
-
+    
     .sidebar-toggle {
         display: block;
     }
-
+    
     .content-header {
         padding: 1rem;
     }
-
+    
     .content-container {
         padding: 1rem;
-    }
-
-    .action-grid {
-        grid-template-columns: 1fr;
     }
 }

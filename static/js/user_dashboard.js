@@ -1,5 +1,5 @@
 /**
- * Developer Dashboard JavaScript
+ * User Dashboard JavaScript
  * Handles dashboard functionality, navigation, and data visualization
  */
 
@@ -15,9 +15,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize sidebar toggle for mobile
     initSidebarToggle();
 
-    // Initialize modals
-    initModals();
-
     // Load dashboard data
     loadDashboardData();
 });
@@ -28,8 +25,6 @@ document.addEventListener('DOMContentLoaded', function() {
 function initNavigation() {
     const navLinks = {
         'nav-dashboard': 'dashboard-content',
-        'nav-retrain': 'retrain-content',
-        'nav-manage': 'manage-content',
         'nav-predict': 'predict-content',
         'nav-history': 'history-content'
     };
@@ -72,45 +67,6 @@ function initSidebarToggle() {
             sidebar.classList.toggle('active');
         });
     }
-}
-
-/**
- * Initialize modal functionality
- */
-function initModals() {
-    // Retraining modal
-    const retrainingModal = document.getElementById('retrainingModal');
-    const retrainBtn = document.getElementById('retrainBtn');
-    const closeBtn = document.querySelector('.modal .close');
-    const cancelRetrainBtn = document.getElementById('cancelRetrainBtn');
-
-    // Open modal when retrain button is clicked
-    if (retrainBtn && retrainingModal) {
-        retrainBtn.addEventListener('click', function() {
-            retrainingModal.style.display = 'block';
-        });
-    }
-
-    // Close modal when close button is clicked
-    if (closeBtn && retrainingModal) {
-        closeBtn.addEventListener('click', function() {
-            retrainingModal.style.display = 'none';
-        });
-    }
-
-    // Close modal when cancel button is clicked
-    if (cancelRetrainBtn && retrainingModal) {
-        cancelRetrainBtn.addEventListener('click', function() {
-            retrainingModal.style.display = 'none';
-        });
-    }
-
-    // Close modal when clicking outside the modal content
-    window.addEventListener('click', function(event) {
-        if (event.target === retrainingModal) {
-            retrainingModal.style.display = 'none';
-        }
-    });
 }
 
 /**
@@ -160,6 +116,15 @@ function updateDashboard(models) {
 
     // Update models table only
     updateModelsTable(models);
+
+    // Set up prediction button
+    const predictBtn = document.getElementById('predictBtn');
+    if (predictBtn) {
+        predictBtn.addEventListener('click', function() {
+            // Navigate to prediction page
+            document.getElementById('nav-predict').click();
+        });
+    }
 }
 
 /**
@@ -177,8 +142,8 @@ function createPerformanceChart(ctx, models) {
 
     // Create gradient for bars
     const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(37, 99, 235, 0.8)'); // Blue 600
-    gradient.addColorStop(1, 'rgba(37, 99, 235, 0.1)');
+    gradient.addColorStop(0, 'rgba(13, 148, 136, 0.8)'); // Teal 600
+    gradient.addColorStop(1, 'rgba(13, 148, 136, 0.1)');
 
     performanceChart = new Chart(ctx, {
         type: 'bar',
@@ -188,12 +153,12 @@ function createPerformanceChart(ctx, models) {
                 label: 'Accuracy',
                 data: metrics.map(metric => metric['Accuracy']),
                 backgroundColor: gradient,
-                borderColor: 'rgba(37, 99, 235, 1)',
+                borderColor: 'rgba(13, 148, 136, 1)',
                 borderWidth: 2,
                 borderRadius: 8,
                 barThickness: 50,
-                hoverBackgroundColor: 'rgba(37, 99, 235, 0.9)',
-                hoverBorderColor: 'rgba(37, 99, 235, 1)',
+                hoverBackgroundColor: 'rgba(13, 148, 136, 0.9)',
+                hoverBorderColor: 'rgba(13, 148, 136, 1)',
                 hoverBorderWidth: 3
             }]
         },
@@ -209,18 +174,18 @@ function createPerformanceChart(ctx, models) {
                     mode: 'index',
                     intersect: false,
                     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    titleColor: '#1e293b',
+                    titleColor: '#134e4a',
                     titleFont: {
                         size: 14,
                         weight: 'bold',
                         family: "'Segoe UI', Arial, sans-serif"
                     },
-                    bodyColor: '#64748b',
+                    bodyColor: '#134e4a',
                     bodyFont: {
                         size: 13,
                         family: "'Segoe UI', Arial, sans-serif"
                     },
-                    borderColor: '#e2e8f0',
+                    borderColor: '#ccfbf1',
                     borderWidth: 1,
                     padding: 12,
                     cornerRadius: 8,
@@ -244,8 +209,8 @@ function createPerformanceChart(ctx, models) {
                     max: 1,
                     grid: {
                         drawBorder: false,
-                        color: 'rgba(226, 232, 240, 0.5)',
-                        zeroLineColor: 'rgba(226, 232, 240, 0.9)'
+                        color: 'rgba(204, 251, 241, 0.5)',
+                        zeroLineColor: 'rgba(204, 251, 241, 0.9)'
                     },
                     ticks: {
                         callback: function(value) {
@@ -257,7 +222,7 @@ function createPerformanceChart(ctx, models) {
                             family: "'Segoe UI', Arial, sans-serif"
                         },
                         padding: 10,
-                        color: '#64748b'
+                        color: '#134e4a'
                     },
                     title: {
                         display: true,
@@ -271,7 +236,7 @@ function createPerformanceChart(ctx, models) {
                             top: 10,
                             bottom: 10
                         },
-                        color: '#1e293b'
+                        color: '#134e4a'
                     }
                 },
                 x: {
@@ -284,7 +249,7 @@ function createPerformanceChart(ctx, models) {
                             family: "'Segoe UI', Arial, sans-serif"
                         },
                         padding: 10,
-                        color: '#64748b'
+                        color: '#134e4a'
                     }
                 }
             },
