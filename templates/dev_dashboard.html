@@ -141,16 +141,65 @@
             </div>
 
             <!-- Other content sections will be hidden initially -->
-            <div class="content-container hidden" id="retrain-content">
-                <!-- Retrain Model content will be implemented later -->
-                <h2>Retrain Model</h2>
-                <p>This section will be implemented later.</p>
-            </div>
 
             <div class="content-container hidden" id="manage-content">
-                <!-- Manage Models content will be implemented later -->
-                <h2>Manage Models</h2>
-                <p>This section will be implemented later.</p>
+                <section class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-cogs"></i> Manage Models</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="models-management-container">
+                            <div class="models-filter">
+                                <div class="search-box">
+                                    <input type="text" id="model-search" placeholder="Search models...">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                                <div class="filter-options">
+                                    <select id="model-type-filter">
+                                        <option value="all">All Model Types</option>
+                                        <option value="1">Gradient Boosting</option>
+                                        <option value="2">Random Forest</option>
+                                        <option value="3">Decision Tree</option>
+                                        <option value="4">Logistic Regression</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="models-table-wrapper">
+                                <table class="models-table" id="manage-models-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Model Name</th>
+                                            <th>Type</th>
+                                            <th>Version</th>
+                                            <th>Accuracy</th>
+                                            <th>Created Date</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="models-table-body">
+                                        <!-- Models will be loaded here dynamically -->
+                                        <tr class="loading-row">
+                                            <td colspan="6" class="text-center">
+                                                <i class="fas fa-spinner fa-spin"></i> Loading models...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="models-pagination">
+                                <button id="prev-page" class="pagination-btn" disabled>
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </button>
+                                <span id="page-info">Page 1 of 1</span>
+                                <button id="next-page" class="pagination-btn" disabled>
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
 
             <div class="content-container hidden" id="predict-content">
@@ -285,6 +334,168 @@
                 </div>
             </div>
 
+            <div class="content-container hidden" id="retrain-content">
+                <section class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-sync-alt"></i> Retrain Model</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="retrain-intro">
+                            <p>Upload a new dataset to retrain the Gradient Boosting Machine model. The system will combine your dataset with existing data and create an improved model.</p>
+                            <div class="info-box">
+                                <i class="fas fa-info-circle"></i>
+                                <div>
+                                    <h4>Dataset Requirements</h4>
+                                    <ul>
+                                        <li>File format: CSV or Excel (.xlsx)</li>
+                                        <li>Required columns: tenure, InternetService, OnlineSecurity, TechSupport, Contract, SeniorCitizen, Partner, Dependents, OnlineBackup, DeviceProtection, StreamingTV, StreamingMovies, PaymentMethod, PaperlessBilling, TotalCharges, MonthlyCharges, customerID, Churn</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form id="retrain-form" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label for="dataset-name">Dataset Name</label>
+                                <input type="text" id="dataset-name" name="dataset_name" placeholder="Enter a name for this dataset" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Upload Dataset</label>
+                                <div class="file-upload-container">
+                                    <input type="file" id="dataset-file" name="dataset_file" accept=".csv,.xlsx" required>
+                                    <div class="file-upload-message">Drag & drop your file here or click to browse</div>
+                                </div>
+                                <div class="file-upload-info">
+                                    <p>Accepted formats: CSV, Excel (.xlsx)</p>
+                                    <p>Maximum file size: 10MB</p>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="action-button primary">
+                                    <i class="fas fa-sync-alt"></i> Start Retraining
+                                </button>
+                            </div>
+                        </form>
+
+                        <div id="retrain-results" class="hidden">
+                            <h3>Retraining Results</h3>
+
+                            <div class="results-summary">
+                                <div class="summary-item">
+                                    <h4>Model Version</h4>
+                                    <p id="model-version">-</p>
+                                </div>
+                                <div class="summary-item">
+                                    <h4>Dataset</h4>
+                                    <p id="dataset-info">-</p>
+                                </div>
+                                <div class="summary-item">
+                                    <h4>Training Date</h4>
+                                    <p id="training-date">-</p>
+                                </div>
+                            </div>
+
+                            <div class="metrics-comparison">
+                                <h4>Performance Metrics</h4>
+                                <div class="metrics-table-container">
+                                    <table class="metrics-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Metric</th>
+                                                <th>Previous Model</th>
+                                                <th>New Model</th>
+                                                <th>Difference</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Accuracy</td>
+                                                <td id="accuracy-previous">-</td>
+                                                <td id="accuracy-new">-</td>
+                                                <td id="accuracy-diff">-</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Precision</td>
+                                                <td id="precision-previous">-</td>
+                                                <td id="precision-new">-</td>
+                                                <td id="precision-diff">-</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Recall</td>
+                                                <td id="recall-previous">-</td>
+                                                <td id="recall-new">-</td>
+                                                <td id="recall-diff">-</td>
+                                            </tr>
+                                            <tr>
+                                                <td>F1 Score</td>
+                                                <td id="f1-previous">-</td>
+                                                <td id="f1-new">-</td>
+                                                <td id="f1-diff">-</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="retrain-actions">
+                                <button id="deploy-model-btn" class="action-button primary">
+                                    <i class="fas fa-rocket"></i> Deploy Model
+                                </button>
+                                <button id="new-retrain-btn" class="action-button secondary">
+                                    <i class="fas fa-plus"></i> New Retraining
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Retraining Progress Modal -->
+                <div id="retraining-progress-modal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2><i class="fas fa-sync-alt fa-spin"></i> Retraining in Progress</h2>
+                        </div>
+                        <div class="modal-body">
+                            <div class="progress-container">
+                                <div class="progress-step active" id="step-upload">
+                                    <div class="step-icon"><i class="fas fa-upload"></i></div>
+                                    <div class="step-content">
+                                        <h4>Uploading Dataset</h4>
+                                        <p>Uploading and validating your dataset...</p>
+                                    </div>
+                                </div>
+                                <div class="progress-step" id="step-combine">
+                                    <div class="step-icon"><i class="fas fa-object-group"></i></div>
+                                    <div class="step-content">
+                                        <h4>Combining Datasets</h4>
+                                        <p>Merging with existing datasets...</p>
+                                    </div>
+                                </div>
+                                <div class="progress-step" id="step-train">
+                                    <div class="step-icon"><i class="fas fa-cogs"></i></div>
+                                    <div class="step-content">
+                                        <h4>Training Model</h4>
+                                        <p>Training the GBM model with combined data...</p>
+                                    </div>
+                                </div>
+                                <div class="progress-step" id="step-evaluate">
+                                    <div class="step-icon"><i class="fas fa-chart-bar"></i></div>
+                                    <div class="step-content">
+                                        <h4>Evaluating Performance</h4>
+                                        <p>Calculating metrics and comparing results...</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="progress-message" id="progress-message">
+                                Starting the retraining process...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="content-container hidden" id="history-content">
                 <section class="card">
                     <div class="card-header">
@@ -385,24 +596,24 @@
     </div>
 
     <!-- Modals -->
-    <div id="retrainingModal" class="modal">
+    <div id="error-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2><i class="fas fa-sync-alt"></i> Start Retraining</h2>
+                <h2><i class="fas fa-exclamation-triangle"></i> Error</h2>
                 <span class="close">&times;</span>
             </div>
             <div class="modal-body">
-                <!-- Modal content will be added later -->
-                <p>Retraining functionality will be implemented later.</p>
+                <p id="error-message">An error occurred.</p>
             </div>
             <div class="modal-footer">
-                <button class="modal-button secondary" id="cancelRetrainBtn">Cancel</button>
-                <button class="modal-button primary" id="confirmRetrainBtn">Proceed</button>
+                <button class="modal-button primary" id="error-ok-btn">OK</button>
             </div>
         </div>
     </div>
 
     <script src="{{ url_for('static', filename='js/prediction.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/retrain.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/manage_models.js') }}"></script>
     <script src="{{ url_for('static', filename='js/dev_dashboard.js') }}"></script>
 </body>
 </html>

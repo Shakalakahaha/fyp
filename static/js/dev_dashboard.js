@@ -26,7 +26,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize prediction history
     initPredictionHistory();
+
+    // Initialize retrain functionality
+    initRetrain();
 });
+
+// Global function to navigate to a section
+function navigateToSection(sectionId) {
+    // Get the content ID
+    const contentId = sectionId + '-content';
+
+    // Hide all content sections
+    document.querySelectorAll('.content-container').forEach(container => {
+        container.classList.add('hidden');
+    });
+
+    // Show the selected content section
+    document.getElementById(contentId).classList.remove('hidden');
+
+    // Update active navigation item
+    document.querySelectorAll('.sidebar-nav li').forEach(item => {
+        item.classList.remove('active');
+    });
+
+    // Find and activate the corresponding nav item
+    const navItem = document.getElementById('nav-' + sectionId);
+    if (navItem) {
+        navItem.closest('li').classList.add('active');
+    }
+}
 
 /**
  * Initialize navigation between dashboard sections
@@ -39,31 +67,6 @@ function initNavigation() {
         'nav-predict': 'predict-content',
         'nav-history': 'history-content'
     };
-
-    // Function to navigate to a section
-    function navigateToSection(sectionId) {
-        // Get the content ID
-        const contentId = sectionId + '-content';
-
-        // Hide all content sections
-        document.querySelectorAll('.content-container').forEach(container => {
-            container.classList.add('hidden');
-        });
-
-        // Show the selected content section
-        document.getElementById(contentId).classList.remove('hidden');
-
-        // Update active navigation item
-        document.querySelectorAll('.sidebar-nav li').forEach(item => {
-            item.classList.remove('active');
-        });
-
-        // Find and activate the corresponding nav item
-        const navItem = document.getElementById('nav-' + sectionId);
-        if (navItem) {
-            navItem.closest('li').classList.add('active');
-        }
-    }
 
     // Add click event listeners to all navigation links
     Object.keys(navLinks).forEach(navId => {
@@ -104,37 +107,38 @@ function initSidebarToggle() {
  * Initialize modal functionality
  */
 function initModals() {
-    // Retraining modal
-    const retrainingModal = document.getElementById('retrainingModal');
+    // Quick action buttons
     const retrainBtn = document.getElementById('retrainBtn');
     const closeBtn = document.querySelector('.modal .close');
-    const cancelRetrainBtn = document.getElementById('cancelRetrainBtn');
+    const errorOkBtn = document.getElementById('error-ok-btn');
+    const errorModal = document.getElementById('error-modal');
 
-    // Open modal when retrain button is clicked
-    if (retrainBtn && retrainingModal) {
+    // Navigate to retrain section when retrain button is clicked
+    if (retrainBtn) {
         retrainBtn.addEventListener('click', function() {
-            retrainingModal.style.display = 'block';
+            // Navigate to retrain section
+            navigateToSection('retrain');
         });
     }
 
-    // Close modal when close button is clicked
-    if (closeBtn && retrainingModal) {
+    // Close error modal when close button is clicked
+    if (closeBtn && errorModal) {
         closeBtn.addEventListener('click', function() {
-            retrainingModal.style.display = 'none';
+            errorModal.style.display = 'none';
         });
     }
 
-    // Close modal when cancel button is clicked
-    if (cancelRetrainBtn && retrainingModal) {
-        cancelRetrainBtn.addEventListener('click', function() {
-            retrainingModal.style.display = 'none';
+    // Close error modal when OK button is clicked
+    if (errorOkBtn && errorModal) {
+        errorOkBtn.addEventListener('click', function() {
+            errorModal.style.display = 'none';
         });
     }
 
-    // Close modal when clicking outside the modal content
+    // Close modals when clicking outside the modal content
     window.addEventListener('click', function(event) {
-        if (event.target === retrainingModal) {
-            retrainingModal.style.display = 'none';
+        if (event.target === errorModal) {
+            errorModal.style.display = 'none';
         }
     });
 }

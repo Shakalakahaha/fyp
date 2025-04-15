@@ -8,6 +8,7 @@ import secrets
 import os
 import uuid
 import json
+import pandas as pd
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -15,6 +16,7 @@ import logging
 import email_service
 from model_initialization import initialize_system
 from prediction_utils import process_prediction_request
+from retrain_utils import validate_dataset, get_latest_dataset, combine_datasets, train_gbm_model, get_next_model_version, get_previous_model_metrics, register_model_in_db, register_dataset_in_db
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -1221,6 +1223,7 @@ def get_models_metrics():
         cursor = conn.cursor(dictionary=True)
 
         # Query to get models with their metrics
+        # Only include default models and deployed models for the company
         query = """
         SELECT m.id, m.name, mt.name as type, m.version, m.is_default,
                mm.accuracy, mm.precision as precision_val, mm.recall, mm.f1_score, mm.auc_roc,
@@ -1228,11 +1231,12 @@ def get_models_metrics():
         FROM models m
         JOIN modeltypes mt ON m.model_type_id = mt.id
         JOIN modelmetrics mm ON m.id = mm.model_id
-        WHERE m.company_id = %s OR m.is_default = 1
+        LEFT JOIN modeldeployments md ON m.id = md.model_id AND md.company_id = %s AND md.is_active = 1
+        WHERE (m.is_default = 1) OR (m.company_id = %s AND md.id IS NOT NULL)
         ORDER BY m.is_default DESC, m.name ASC
         """
 
-        cursor.execute(query, (company_id,))
+        cursor.execute(query, (company_id, company_id))
         models_data = cursor.fetchall()
 
         # Format the data for the frontend
@@ -1284,6 +1288,581 @@ def get_models_metrics():
         return jsonify({
             'status': 'error',
             'message': str(e)
+        }), 500
+
+# Retrain Model API Routes
+@app.route('/api/retrain/upload', methods=['POST'])
+@developer_required
+def upload_retrain_dataset():
+    """Upload a dataset for retraining"""
+    try:
+        # Get user info from session
+        user_info = session.get('user', {})
+        company_id = user_info.get('company_id')
+
+        if not company_id:
+            return jsonify({
+                'status': 'error',
+                'message': 'User not authenticated or company ID not found'
+            }), 401
+
+        # Check if dataset file was uploaded
+        if 'dataset_file' not in request.files:
+            return jsonify({
+                'status': 'error',
+                'message': 'No dataset file uploaded'
+            }), 400
+
+        dataset_file = request.files['dataset_file']
+        dataset_name = request.form.get('dataset_name', 'Uploaded Dataset')
+
+        if dataset_file.filename == '':
+            return jsonify({
+                'status': 'error',
+                'message': 'No file selected'
+            }), 400
+
+        # Check file extension
+        file_ext = os.path.splitext(dataset_file.filename)[1].lower()
+        if file_ext not in ['.csv', '.xlsx', '.xls']:
+            return jsonify({
+                'status': 'error',
+                'message': 'Invalid file format. Please upload a CSV or Excel file.'
+            }), 400
+
+        # Create directory if it doesn't exist
+        upload_dir = os.path.join('datasets', 'dev', 'uploadToRetrain')
+        os.makedirs(upload_dir, exist_ok=True)
+
+        # Generate a unique filename
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        unique_filename = f"{company_id}_{timestamp}{file_ext}"
+        file_path = os.path.join(upload_dir, unique_filename)
+
+        # Save the file
+        dataset_file.save(file_path)
+
+        # Validate the dataset
+        is_valid, message = validate_dataset(file_path)
+        if not is_valid:
+            # Remove the invalid file
+            os.remove(file_path)
+            return jsonify({
+                'status': 'error',
+                'message': message
+            }), 400
+
+        # Register the dataset in the database
+        success, message, dataset_id = register_dataset_in_db(
+            company_id=company_id,
+            name=dataset_name,
+            file_path=file_path,
+            is_uploaded=True
+        )
+
+        if not success:
+            return jsonify({
+                'status': 'error',
+                'message': message
+            }), 500
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Dataset uploaded successfully',
+            'dataset_id': dataset_id,
+            'dataset_name': dataset_name,
+            'file_path': file_path
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error uploading dataset: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f"Error uploading dataset: {str(e)}"
+        }), 500
+
+@app.route('/api/retrain/combine/<int:dataset_id>', methods=['GET'])
+@developer_required
+def combine_retrain_datasets(dataset_id):
+    """Combine the uploaded dataset with existing datasets"""
+    try:
+        # Get user info from session
+        user_info = session.get('user', {})
+        company_id = user_info.get('company_id')
+
+        if not company_id:
+            return jsonify({
+                'status': 'error',
+                'message': 'User not authenticated or company ID not found'
+            }), 401
+
+        # Connect to database
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Get the uploaded dataset
+        query = "SELECT id, name, file_path FROM datasets WHERE id = %s AND company_id = %s"
+        cursor.execute(query, (dataset_id, company_id))
+        uploaded_dataset = cursor.fetchone()
+
+        if not uploaded_dataset:
+            return jsonify({
+                'status': 'error',
+                'message': 'Dataset not found or does not belong to your company'
+            }), 404
+
+        # Get the latest dataset for combining
+        latest_dataset = get_latest_dataset(company_id)
+
+        if not latest_dataset:
+            return jsonify({
+                'status': 'error',
+                'message': 'No existing dataset found for combining'
+            }), 404
+
+        logger.info(f"Dataset combination: uploaded={uploaded_dataset['id']} ({uploaded_dataset['name']}), latest={latest_dataset['id']} ({latest_dataset['name']}, type={latest_dataset['type']})")
+
+        # Create directory for combined dataset
+        combined_dir = os.path.join('datasets', 'dev', 'combinedDataset')
+        os.makedirs(combined_dir, exist_ok=True)
+
+        # Generate a unique filename for the combined dataset
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        combined_filename = f"{company_id}_combined_{timestamp}.csv"
+        combined_path = os.path.join(combined_dir, combined_filename)
+
+        # Combine the datasets
+        success, message, total_records = combine_datasets(
+            new_dataset_path=uploaded_dataset['file_path'],
+            existing_dataset_path=latest_dataset['file_path'],
+            output_path=combined_path
+        )
+
+        if not success:
+            return jsonify({
+                'status': 'error',
+                'message': message
+            }), 500
+
+        # Register the combined dataset in the database
+        success, message, combined_dataset_id = register_dataset_in_db(
+            company_id=company_id,
+            name=f"Combined Dataset {timestamp}",
+            file_path=combined_path,
+            is_uploaded=False,
+            is_combined=True,
+            parent_dataset_id=uploaded_dataset['id']
+        )
+
+        if not success:
+            return jsonify({
+                'status': 'error',
+                'message': message
+            }), 500
+
+        cursor.close()
+        conn.close()
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Datasets combined successfully',
+            'combined_dataset_id': combined_dataset_id,
+            'total_records': total_records,
+            'uploaded_dataset': {
+                'id': uploaded_dataset['id'],
+                'name': uploaded_dataset['name'],
+                'path': uploaded_dataset['file_path']
+            },
+            'existing_dataset': {
+                'id': latest_dataset['id'],
+                'name': latest_dataset['name'],
+                'path': latest_dataset['file_path'],
+                'type': latest_dataset['type']
+            },
+            'combined_path': combined_path
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error combining datasets: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f"Error combining datasets: {str(e)}"
+        }), 500
+
+@app.route('/api/retrain/train/<int:combined_dataset_id>', methods=['GET'])
+@developer_required
+def train_model(combined_dataset_id):
+    """Train a model using the combined dataset"""
+    try:
+        # Get user info from session
+        user_info = session.get('user', {})
+        company_id = user_info.get('company_id')
+
+        if not company_id:
+            return jsonify({
+                'status': 'error',
+                'message': 'User not authenticated or company ID not found'
+            }), 401
+
+        # Connect to database
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Get the combined dataset
+        query = "SELECT id, name, file_path FROM datasets WHERE id = %s AND company_id = %s"
+        cursor.execute(query, (combined_dataset_id, company_id))
+        combined_dataset = cursor.fetchone()
+
+        if not combined_dataset:
+            return jsonify({
+                'status': 'error',
+                'message': 'Combined dataset not found or does not belong to your company'
+            }), 404
+
+        # Get the model type ID for Gradient Boosting
+        query = "SELECT id FROM modeltypes WHERE name = 'Gradient Boosting'"
+        cursor.execute(query)
+        model_type = cursor.fetchone()
+
+        if not model_type:
+            return jsonify({
+                'status': 'error',
+                'message': 'Gradient Boosting model type not found in the database'
+            }), 404
+
+        model_type_id = model_type['id']
+
+        # Get the next version number
+        next_version = get_next_model_version(company_id, model_type_id)
+
+        # Create directory for retrained models
+        retrained_dir = os.path.join('models', 'retrained_models')
+        os.makedirs(retrained_dir, exist_ok=True)
+
+        # Generate filenames for the model and features
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        model_filename = f"{company_id}_gbm_v{next_version}_{timestamp}.pkl"
+        features_filename = f"{company_id}_gbm_v{next_version}_{timestamp}_features.pkl"
+
+        model_path = os.path.join(retrained_dir, model_filename)
+        features_path = os.path.join(retrained_dir, features_filename)
+
+        # Train the model
+        success, message, metrics, feature_importance = train_gbm_model(
+            dataset_path=combined_dataset['file_path'],
+            output_model_path=model_path,
+            output_features_path=features_path
+        )
+
+        if not success:
+            return jsonify({
+                'status': 'error',
+                'message': message
+            }), 500
+
+        # Get previous model metrics for comparison
+        previous_metrics = get_previous_model_metrics(company_id, model_type_id)
+
+        # Register the model in the database
+        success, message, model_id = register_model_in_db(
+            company_id=company_id,
+            model_type_id=model_type_id,
+            model_name=f"Gradient Boosting v{next_version}",
+            version=next_version,
+            file_path=model_path,
+            metrics=metrics,
+            dataset_id=combined_dataset_id
+        )
+
+        if not success:
+            return jsonify({
+                'status': 'error',
+                'message': message
+            }), 500
+
+        cursor.close()
+        conn.close()
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Model trained successfully',
+            'model_id': model_id,
+            'model_version': f"v{next_version}",
+            'metrics': metrics,
+            'previous_metrics': previous_metrics,
+            'feature_importance': feature_importance,
+            'total_records': len(pd.read_csv(combined_dataset['file_path']))
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error training model: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f"Error training model: {str(e)}"
+        }), 500
+
+@app.route('/api/retrain/deploy/<int:model_id>', methods=['POST'])
+@developer_required
+def deploy_model(model_id):
+    """Deploy a trained model"""
+    try:
+        # Get user info from session
+        user_info = session.get('user', {})
+        company_id = user_info.get('company_id')
+        developer_id = user_info.get('id')
+
+        if not company_id or not developer_id:
+            return jsonify({
+                'status': 'error',
+                'message': 'User not authenticated or company ID not found'
+            }), 401
+
+        # Connect to database
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Check if the model exists and belongs to the company
+        query = "SELECT id, name, version FROM models WHERE id = %s AND company_id = %s"
+        cursor.execute(query, (model_id, company_id))
+        model = cursor.fetchone()
+
+        if not model:
+            return jsonify({
+                'status': 'error',
+                'message': 'Model not found or does not belong to your company'
+            }), 404
+
+        # Check if the model is already deployed
+        query = """SELECT id FROM modeldeployments
+                 WHERE model_id = %s AND company_id = %s AND is_active = 1"""
+        cursor.execute(query, (model_id, company_id))
+        existing_deployment = cursor.fetchone()
+
+        if existing_deployment:
+            return jsonify({
+                'status': 'error',
+                'message': 'This model is already deployed and active'
+            }), 400
+
+        # Insert the deployment record
+        query = """INSERT INTO modeldeployments
+                 (company_id, model_id, deployed_by, is_active)
+                 VALUES (%s, %s, %s, 1)"""
+        cursor.execute(query, (company_id, model_id, developer_id))
+        conn.commit()
+        deployment_id = cursor.lastrowid
+
+        # Get deployment details
+        query = """SELECT md.id, md.deployed_at, m.name, m.version
+                 FROM modeldeployments md
+                 JOIN models m ON md.model_id = m.id
+                 WHERE md.id = %s"""
+        cursor.execute(query, (deployment_id,))
+        deployment = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Model deployed successfully',
+            'deployment_id': deployment_id,
+            'model_name': deployment['name'],
+            'model_version': deployment['version'],
+            'deployed_at': deployment['deployed_at'].strftime('%Y-%m-%d %H:%M:%S')
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error deploying model: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f"Error deploying model: {str(e)}"
+        }), 500
+
+@app.route('/api/models/list', methods=['GET'])
+@developer_required
+def list_models():
+    """List all models for the company"""
+    try:
+        # Get user info from session
+        user_info = session.get('user', {})
+        company_id = user_info.get('company_id')
+
+        if not company_id:
+            return jsonify({
+                'status': 'error',
+                'message': 'User not authenticated or company ID not found'
+            }), 401
+
+        # Connect to database
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Get all models for the company (including default models)
+        query = """
+        SELECT m.id, m.name, m.version, m.model_type_id, mt.name as model_type_name, m.is_default, m.created_at,
+               mm.accuracy, mm.precision, mm.recall, mm.f1_score,
+               CASE WHEN md.id IS NOT NULL AND md.is_active = 1 THEN 1 ELSE 0 END as is_deployed
+        FROM models m
+        JOIN modeltypes mt ON m.model_type_id = mt.id
+        LEFT JOIN modelmetrics mm ON m.id = mm.model_id
+        LEFT JOIN modeldeployments md ON m.id = md.model_id AND md.company_id = %s AND md.is_active = 1
+        WHERE m.company_id = %s OR m.is_default = 1
+        ORDER BY m.is_default ASC, CAST(m.version AS UNSIGNED) DESC
+        """
+        cursor.execute(query, (company_id, company_id))
+        models = cursor.fetchall()
+
+        # Convert datetime objects to strings for JSON serialization
+        for model in models:
+            if 'created_at' in model and model['created_at']:
+                model['created_at'] = model['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+
+        cursor.close()
+        conn.close()
+
+        return jsonify({
+            'status': 'success',
+            'models': models
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error listing models: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f"Error listing models: {str(e)}"
+        }), 500
+
+@app.route('/api/models/deploy/<int:model_id>', methods=['POST'])
+@developer_required
+def deploy_model_api(model_id):
+    """Deploy a model"""
+    try:
+        # Get user info from session
+        user_info = session.get('user', {})
+        company_id = user_info.get('company_id')
+        developer_id = user_info.get('id')
+
+        if not company_id or not developer_id:
+            return jsonify({
+                'status': 'error',
+                'message': 'User not authenticated or company ID not found'
+            }), 401
+
+        # Connect to database
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Check if the model exists and belongs to the company
+        query = "SELECT id, name, version FROM models WHERE id = %s AND company_id = %s"
+        cursor.execute(query, (model_id, company_id))
+        model = cursor.fetchone()
+
+        if not model:
+            return jsonify({
+                'status': 'error',
+                'message': 'Model not found or does not belong to your company'
+            }), 404
+
+        # Check if the model is already deployed
+        query = """SELECT id FROM modeldeployments
+                 WHERE model_id = %s AND company_id = %s AND is_active = 1"""
+        cursor.execute(query, (model_id, company_id))
+        existing_deployment = cursor.fetchone()
+
+        if existing_deployment:
+            return jsonify({
+                'status': 'success',
+                'message': 'Model is already deployed',
+                'deployment_id': existing_deployment['id']
+            }), 200
+
+        # Insert the deployment record
+        query = """INSERT INTO modeldeployments
+                 (company_id, model_id, deployed_by, is_active)
+                 VALUES (%s, %s, %s, 1)"""
+        cursor.execute(query, (company_id, model_id, developer_id))
+        conn.commit()
+        deployment_id = cursor.lastrowid
+
+        cursor.close()
+        conn.close()
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Model deployed successfully',
+            'deployment_id': deployment_id
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error deploying model: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f"Error deploying model: {str(e)}"
+        }), 500
+
+@app.route('/api/models/undeploy/<int:model_id>', methods=['POST'])
+@developer_required
+def undeploy_model(model_id):
+    """Undeploy a model"""
+    try:
+        # Get user info from session
+        user_info = session.get('user', {})
+        company_id = user_info.get('company_id')
+
+        if not company_id:
+            return jsonify({
+                'status': 'error',
+                'message': 'User not authenticated or company ID not found'
+            }), 401
+
+        # Connect to database
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Check if the model exists and belongs to the company
+        query = "SELECT id FROM models WHERE id = %s AND company_id = %s"
+        cursor.execute(query, (model_id, company_id))
+        model = cursor.fetchone()
+
+        if not model:
+            return jsonify({
+                'status': 'error',
+                'message': 'Model not found or does not belong to your company'
+            }), 404
+
+        # Check if the model is deployed
+        query = """SELECT id FROM modeldeployments
+                 WHERE model_id = %s AND company_id = %s AND is_active = 1"""
+        cursor.execute(query, (model_id, company_id))
+        deployment = cursor.fetchone()
+
+        if not deployment:
+            return jsonify({
+                'status': 'success',
+                'message': 'Model is not currently deployed'
+            }), 200
+
+        # Update the deployment record to inactive
+        query = """UPDATE modeldeployments
+                 SET is_active = 0, deactivated_at = NOW()
+                 WHERE id = %s"""
+        cursor.execute(query, (deployment['id'],))
+        conn.commit()
+
+        cursor.close()
+        conn.close()
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Model undeployed successfully'
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error undeploying model: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f"Error undeploying model: {str(e)}"
         }), 500
 
 if __name__ == '__main__':
