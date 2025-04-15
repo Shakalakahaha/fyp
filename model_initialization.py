@@ -27,7 +27,7 @@ MODELS_DIR = 'models'
 DEFAULT_MODELS_DIR = os.path.join(MODELS_DIR, 'default_models')
 RETRAINED_MODELS_DIR = os.path.join(MODELS_DIR, 'retrained_models')
 DATASETS_DIR = 'datasets'
-ORIGINAL_DATASET = 'DatasetA.csv'
+ORIGINAL_DATASET = os.path.join(DATASETS_DIR, 'original', 'DatasetA.csv')
 
 # Default system company for initialization (needed for foreign key constraints)
 DEFAULT_COMPANY_ID = 'SYS000'
@@ -89,37 +89,57 @@ def initialize_system_company():
         logger.error(f"Error initializing system company: {str(e)}")
         raise
 
-def load_model_metadata(metadata_file):
-    """Load model metadata from pkl file."""
-    # Convert relative path to absolute for file operations
-    absolute_path = os.path.abspath(metadata_file)
+def load_model_metrics(model_name):
+    """Load model metrics from metrics.json file."""
+    metrics_file = os.path.join(os.path.abspath(DEFAULT_MODELS_DIR), 'metrics.json')
 
     try:
-        with open(absolute_path, 'rb') as f:
-            metadata = pickle.load(f)
+        if os.path.exists(metrics_file):
+            with open(metrics_file, 'r') as f:
+                metrics_data = json.load(f)
 
-            # Extract the model name from the file path
-            model_name = os.path.basename(metadata_file).replace('_metadata.pkl', '')
-
-            # Extract metrics from the metadata
-            metrics = metadata.get('metrics', {})
+            if model_name in metrics_data:
+                model_metrics = metrics_data[model_name]['metrics']
+                logger.info(f"Found metrics for {model_name}: {model_metrics}")
+            else:
+                # Default metrics if not found
+                model_metrics = {
+                    'Accuracy': 0.0,
+                    'Precision': 0.0,
+                    'Recall': 0.0,
+                    'F1 Score': 0.0
+                }
+                logger.warning(f"No metrics found for {model_name}, using defaults")
 
             # Convert metrics keys to lowercase and standardize names
             standardized_metrics = {
-                'accuracy': metrics.get('Accuracy', 0.0),
-                'precision': metrics.get('Precision', 0.0),
-                'recall': metrics.get('Recall', 0.0),
-                'f1_score': metrics.get('F1 Score', 0.0),
-                'auc': metrics.get('AUC', 0.0)
+                'accuracy': model_metrics.get('Accuracy', 0.0),
+                'precision': model_metrics.get('Precision', 0.0),
+                'recall': model_metrics.get('Recall', 0.0),
+                'f1_score': model_metrics.get('F1 Score', 0.0),
+                'auc': 0.0  # Default AUC value since it's not in our metrics
             }
 
             return {
                 'name': model_name,
                 'metrics': standardized_metrics,
-                'raw_metadata': metadata
+                'raw_metrics': model_metrics
+            }
+        else:
+            logger.warning(f"Metrics file not found at {metrics_file}")
+            return {
+                'name': model_name,
+                'metrics': {
+                    'accuracy': 0.0,
+                    'precision': 0.0,
+                    'recall': 0.0,
+                    'f1_score': 0.0,
+                    'auc': 0.0
+                },
+                'raw_metrics': {}
             }
     except Exception as e:
-        logger.error(f"Error loading metadata from {metadata_file}: {str(e)}")
+        logger.error(f"Error loading metrics for {model_name}: {str(e)}")
         raise
 
 def register_model_types():
@@ -248,32 +268,58 @@ def register_default_models():
 
     try:
         # Get all model files from the default models directory
-        model_files = {}
+        model_files = []
 
         # Need to use absolute path for directory listing
         abs_default_models_dir = os.path.abspath(DEFAULT_MODELS_DIR)
 
-        for file in os.listdir(abs_default_models_dir):
-            if file.endswith('.pkl'):
-                model_name = file.replace('.pkl', '')
+        # Load metrics from the metrics.json file if it exists
+        metrics_file = os.path.join(abs_default_models_dir, 'metrics.json')
+        if os.path.exists(metrics_file):
+            with open(metrics_file, 'r') as f:
+                metrics_data = json.load(f)
+            logger.info(f"Loaded metrics from {metrics_file}")
+        else:
+            metrics_data = {}
+            logger.warning(f"Metrics file not found at {metrics_file}")
 
-                if not model_name.endswith('_metadata'):
-                    metadata_file = f"{model_name}_metadata.pkl"
-                    if os.path.exists(os.path.join(abs_default_models_dir, metadata_file)):
-                        model_files[model_name] = {
-                            'model': file,
-                            'metadata': metadata_file
-                        }
+        # Get all model files
+        for file in os.listdir(abs_default_models_dir):
+            if file.endswith('.pkl') and not file.endswith('_metadata.pkl') and not file == 'metrics.pkl':
+                model_name = file.replace('.pkl', '')
+                # Skip feature files, joblib files, and scaler files
+                if not model_name.endswith('_features') and not model_name.endswith('_joblib') and not model_name.endswith('_scaler'):
+                    model_files.append(model_name)
+
+        logger.info(f"Found {len(model_files)} model files: {model_files}")
 
         # Register each model in the database
-        for model_name, files in model_files.items():
+        for model_name in model_files:
             # Use relative paths for database records
-            model_path = os.path.join(DEFAULT_MODELS_DIR, files['model'])
-            metadata_path = os.path.join(DEFAULT_MODELS_DIR, files['metadata'])
+            model_path = os.path.join(DEFAULT_MODELS_DIR, f"{model_name}.pkl")
 
-            # Load the metadata - we pass the absolute path for loading the file
-            metadata = load_model_metadata(os.path.join(abs_default_models_dir, files['metadata']))
-            metrics = metadata['metrics']
+            # Get metrics from the metrics.json file
+            if model_name in metrics_data:
+                model_metrics = metrics_data[model_name]['metrics']
+                logger.info(f"Found metrics for {model_name}: {model_metrics}")
+            else:
+                # Default metrics if not found
+                model_metrics = {
+                    'Accuracy': 0.0,
+                    'Precision': 0.0,
+                    'Recall': 0.0,
+                    'F1 Score': 0.0
+                }
+                logger.warning(f"No metrics found for {model_name}, using defaults")
+
+            # Standardize metrics keys
+            standardized_metrics = {
+                'accuracy': model_metrics.get('Accuracy', 0.0),
+                'precision': model_metrics.get('Precision', 0.0),
+                'recall': model_metrics.get('Recall', 0.0),
+                'f1_score': model_metrics.get('F1 Score', 0.0),
+                'auc': 0.0  # Default AUC value since it's not in our metrics
+            }
 
             # Get the model type ID
             model_type_id = get_model_type_id(model_name)
@@ -300,7 +346,7 @@ def register_default_models():
                         )
                     """), {
                         'model_type_id': model_type_id,
-                        'name': model_name,
+                        'name': model_name.replace('_', ' ').title(),  # Convert snake_case to Title Case
                         'path': model_path,
                         'company_id': DEFAULT_COMPANY_ID
                     })
@@ -327,12 +373,12 @@ def register_default_models():
                         )
                     """), {
                         'model_id': model_id,
-                        'accuracy': metrics['accuracy'],
-                        'precision': metrics['precision'],
-                        'recall': metrics['recall'],
-                        'f1_score': metrics['f1_score'],
-                        'auc_roc': metrics['auc'],
-                        'additional_metrics': json.dumps(metadata['raw_metadata'])
+                        'accuracy': standardized_metrics['accuracy'],
+                        'precision': standardized_metrics['precision'],
+                        'recall': standardized_metrics['recall'],
+                        'f1_score': standardized_metrics['f1_score'],
+                        'auc_roc': standardized_metrics['auc'],
+                        'additional_metrics': json.dumps({'metrics': model_metrics})
                     })
 
                     conn.commit()

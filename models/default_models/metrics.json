@@ -1,0 +1,42 @@
+{
+  "gradient_boosting": {
+    "metrics": {
+      "Accuracy": 0.797979797979798,
+      "Precision": 0.6666666666666666,
+      "Recall": 0.5310734463276836,
+      "F1 Score": 0.5911949685534591
+    }
+  },
+  "logistic_regression": {
+    "metrics": {
+      "Accuracy": 0.7381507381507382,
+      "Precision": 0.515828677839851,
+      "Recall": 0.7824858757062146,
+      "F1 Score": 0.621773288439955
+    }
+  },
+  "random_forest": {
+    "metrics": {
+      "Accuracy": 0.7816627816627817,
+      "Precision": 0.6016713091922006,
+      "Recall": 0.6101694915254238,
+      "F1 Score": 0.605890603085554
+    }
+  },
+  "neural_network": {
+    "metrics": {
+      "Accuracy": 0.777000777000777,
+      "Precision": 0.6120401337792643,
+      "Recall": 0.5169491525423728,
+      "F1 Score": 0.5604900459418071
+    }
+  },
+  "decision_tree": {
+    "metrics": {
+      "Accuracy": 0.7816627816627817,
+      "Precision": 0.6166134185303515,
+      "Recall": 0.5451977401129944,
+      "F1 Score": 0.5787106446776612
+    }
+  }
+}

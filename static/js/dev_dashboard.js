@@ -20,6 +20,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Load dashboard data
     loadDashboardData();
+
+    // Initialize prediction functionality
+    initPrediction();
+
+    // Initialize prediction history
+    initPredictionHistory();
 });
 
 /**
@@ -34,29 +40,49 @@ function initNavigation() {
         'nav-history': 'history-content'
     };
 
+    // Function to navigate to a section
+    function navigateToSection(sectionId) {
+        // Get the content ID
+        const contentId = sectionId + '-content';
+
+        // Hide all content sections
+        document.querySelectorAll('.content-container').forEach(container => {
+            container.classList.add('hidden');
+        });
+
+        // Show the selected content section
+        document.getElementById(contentId).classList.remove('hidden');
+
+        // Update active navigation item
+        document.querySelectorAll('.sidebar-nav li').forEach(item => {
+            item.classList.remove('active');
+        });
+
+        // Find and activate the corresponding nav item
+        const navItem = document.getElementById('nav-' + sectionId);
+        if (navItem) {
+            navItem.closest('li').classList.add('active');
+        }
+    }
+
     // Add click event listeners to all navigation links
     Object.keys(navLinks).forEach(navId => {
         const navElement = document.getElementById(navId);
         if (navElement) {
             navElement.addEventListener('click', function(e) {
                 e.preventDefault();
-
-                // Hide all content sections
-                document.querySelectorAll('.content-container').forEach(container => {
-                    container.classList.add('hidden');
-                });
-
-                // Show the selected content section
-                const contentId = navLinks[navId];
-                document.getElementById(contentId).classList.remove('hidden');
-
-                // Update active navigation item
-                document.querySelectorAll('.sidebar-nav li').forEach(item => {
-                    item.classList.remove('active');
-                });
-                this.closest('li').classList.add('active');
+                const sectionId = navId.replace('nav-', '');
+                navigateToSection(sectionId);
             });
         }
+    });
+
+    // Add click event listeners to quick action buttons
+    document.querySelectorAll('[data-section]').forEach(button => {
+        button.addEventListener('click', function() {
+            const sectionId = this.getAttribute('data-section');
+            navigateToSection(sectionId);
+        });
     });
 }
 
@@ -231,8 +257,7 @@ function createPerformanceChart(ctx, models) {
                                 `Accuracy: ${(modelMetrics['Accuracy'] * 100).toFixed(2)}%`,
                                 `Precision: ${(modelMetrics['Precision'] * 100).toFixed(2)}%`,
                                 `Recall: ${(modelMetrics['Recall'] * 100).toFixed(2)}%`,
-                                `F1 Score: ${(modelMetrics['F1 Score'] * 100).toFixed(2)}%`,
-                                modelMetrics['AUC'] ? `AUC: ${(modelMetrics['AUC'] * 100).toFixed(2)}%` : null
+                                `F1 Score: ${(modelMetrics['F1 Score'] * 100).toFixed(2)}%`
                             ].filter(Boolean);
                         }
                     }
@@ -322,7 +347,6 @@ function updateModelsTable(models) {
         const precision = metrics.Precision !== undefined ? (metrics.Precision * 100).toFixed(2) + '%' : 'N/A';
         const recall = metrics.Recall !== undefined ? (metrics.Recall * 100).toFixed(2) + '%' : 'N/A';
         const f1Score = metrics['F1 Score'] !== undefined ? (metrics['F1 Score'] * 100).toFixed(2) + '%' : 'N/A';
-        const auc = metrics.AUC !== undefined ? (metrics.AUC * 100).toFixed(2) + '%' : 'N/A';
 
         // Create table cells
         row.innerHTML = `
@@ -333,7 +357,6 @@ function updateModelsTable(models) {
             <td>${precision}</td>
             <td>${recall}</td>
             <td>${f1Score}</td>
-            <td>${auc}</td>
             <td><span class="status-badge active">Active</span></td>
         `;
 
@@ -350,6 +373,408 @@ function formatModelName(name) {
     return name.split('_')
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
+}
+
+/**
+ * Initialize prediction functionality
+ */
+function initPrediction() {
+    // Only initialize if we're on the prediction page
+    const predictContent = document.getElementById('predict-content');
+    if (!predictContent) return;
+
+    // Get available models and populate the dropdown
+    predictionModule.fetchAvailableModels()
+        .then(models => {
+            predictionModule.populateModelSelect('model-select', models);
+            predictionModule.setupModelSelectListener('model-select', 'selected-model-info');
+        })
+        .catch(error => {
+            console.error('Error initializing prediction:', error);
+            showNotification('Error loading available models', 'error');
+        });
+
+    // Set up prediction form submission
+    predictionModule.setupPredictionForm('predict-form',
+        // Success callback
+        function(results) {
+            predictionModule.displayPredictionResults(
+                results,
+                'prediction-form-section',
+                'prediction-results-section'
+            );
+        },
+        // Error callback
+        function(errorMessage) {
+            showNotification(errorMessage, 'error');
+        }
+    );
+}
+
+/**
+ * Initialize prediction history functionality
+ */
+function initPredictionHistory() {
+    // Set up start prediction button in empty state
+    const startPredictionBtn = document.getElementById('start-prediction-btn');
+    if (startPredictionBtn) {
+        startPredictionBtn.addEventListener('click', function() {
+            document.getElementById('nav-predict').click();
+        });
+    }
+
+    // Set up modal close button
+    const modalCloseBtn = document.querySelector('#prediction-details-modal .close');
+    if (modalCloseBtn) {
+        modalCloseBtn.addEventListener('click', function() {
+            document.getElementById('prediction-details-modal').style.display = 'none';
+        });
+    }
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(event) {
+        const modal = document.getElementById('prediction-details-modal');
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+
+    // Load prediction history when navigating to the history section
+    document.getElementById('nav-history').addEventListener('click', function() {
+        loadPredictionHistory();
+    });
+}
+
+/**
+ * Load prediction history from the server
+ */
+function loadPredictionHistory() {
+    console.log('Loading prediction history...');
+    const loadingElement = document.getElementById('history-loading');
+    const emptyElement = document.getElementById('history-empty');
+    const tableContainer = document.getElementById('history-table-container');
+
+    if (!loadingElement || !emptyElement || !tableContainer) {
+        console.error('Missing required elements for prediction history');
+        return;
+    }
+
+    // Reset all states first
+    loadingElement.style.display = 'flex';
+    emptyElement.style.display = 'none';
+    tableContainer.style.display = 'none';
+
+    // Fetch prediction history
+    fetch('/api/predictions/history')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load prediction history');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Prediction history data:', data);
+
+            // Hide loading state
+            loadingElement.style.display = 'none';
+
+            if (!data.data || data.data.length === 0) {
+                // Show empty state
+                emptyElement.style.display = 'flex';
+                tableContainer.style.display = 'none';
+                console.log('No prediction history found');
+            } else {
+                // Show table and populate with data
+                emptyElement.style.display = 'none';
+                tableContainer.style.display = 'block';
+                populatePredictionHistory(data.data);
+                console.log('Populated prediction history table');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading prediction history:', error);
+            loadingElement.style.display = 'none';
+            emptyElement.style.display = 'flex';
+            tableContainer.style.display = 'none';
+            showNotification('Error loading prediction history: ' + error.message, 'error');
+        });
+}
+
+/**
+ * Populate prediction history table
+ * @param {Array} predictions - Array of prediction objects
+ */
+function populatePredictionHistory(predictions) {
+    const tableBody = document.getElementById('history-table-body');
+    tableBody.innerHTML = '';
+
+    predictions.forEach(prediction => {
+        const row = document.createElement('tr');
+
+        // Format date
+        const date = new Date(prediction.created_at);
+        const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        // Format churn rate
+        const churnRate = prediction.churn_distribution.churn_rate * 100;
+        let churnRateClass = 'low';
+        if (churnRate > 30) {
+            churnRateClass = 'high';
+        } else if (churnRate > 15) {
+            churnRateClass = 'medium';
+        }
+
+        // Create row content
+        row.innerHTML = `
+            <td>${prediction.prediction_name}</td>
+            <td>${prediction.model_name}</td>
+            <td>${formattedDate}</td>
+            <td>${prediction.total_records.toLocaleString()}</td>
+            <td><span class="churn-rate ${churnRateClass}">${churnRate.toFixed(1)}%</span></td>
+            <td class="actions-cell">
+                <button class="action-button view-btn" data-id="${prediction.id}">
+                    <i class="fas fa-chart-pie"></i> View
+                </button>
+                <button class="action-button download-original-btn" data-url="${prediction.upload_download_url}">
+                    <i class="fas fa-file-upload"></i> Original
+                </button>
+                <button class="action-button download-results-btn" data-url="${prediction.download_url}">
+                    <i class="fas fa-file-download"></i> Results
+                </button>
+            </td>
+        `;
+
+        // Add event listeners to buttons
+        const viewBtn = row.querySelector('.view-btn');
+        const downloadOriginalBtn = row.querySelector('.download-original-btn');
+        const downloadResultsBtn = row.querySelector('.download-results-btn');
+
+        viewBtn.addEventListener('click', function() {
+            showPredictionDetails(prediction);
+        });
+
+        downloadOriginalBtn.addEventListener('click', function() {
+            window.location.href = this.getAttribute('data-url');
+        });
+
+        downloadResultsBtn.addEventListener('click', function() {
+            window.location.href = this.getAttribute('data-url');
+        });
+
+        tableBody.appendChild(row);
+    });
+}
+
+/**
+ * Show prediction details in modal
+ * @param {Object} prediction - Prediction object
+ */
+function showPredictionDetails(prediction) {
+    // Set modal content
+    document.getElementById('modal-prediction-name').textContent = prediction.prediction_name;
+    document.getElementById('modal-model-name').textContent = prediction.model_name;
+    document.getElementById('modal-date').textContent = new Date(prediction.created_at).toLocaleString();
+    document.getElementById('modal-total-records').textContent = prediction.total_records.toLocaleString();
+    document.getElementById('modal-churn-rate').textContent = (prediction.churn_distribution.churn_rate * 100).toFixed(1) + '%';
+
+    // Set download buttons
+    const downloadOriginalBtn = document.getElementById('modal-download-original');
+    const downloadResultsBtn = document.getElementById('modal-download-results');
+
+    downloadOriginalBtn.onclick = function() {
+        window.location.href = prediction.upload_download_url;
+    };
+
+    downloadResultsBtn.onclick = function() {
+        window.location.href = prediction.download_url;
+    };
+
+    // Create charts
+    createModalChurnChart(prediction.churn_distribution);
+
+    // Fetch feature importance data
+    fetch(`/api/predictions/${prediction.id}/feature-importance`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load feature importance data');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success' && data.data && data.data.length > 0) {
+                document.getElementById('modal-feature-container').style.display = 'block';
+                document.getElementById('modal-feature-no-data').style.display = 'none';
+                createModalFeatureChart(data.data);
+            } else {
+                document.getElementById('modal-feature-container').style.display = 'none';
+                document.getElementById('modal-feature-no-data').style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading feature importance:', error);
+            document.getElementById('modal-feature-container').style.display = 'none';
+            document.getElementById('modal-feature-no-data').style.display = 'block';
+        });
+
+    // Show modal
+    document.getElementById('prediction-details-modal').style.display = 'block';
+}
+
+/**
+ * Create churn distribution chart in modal
+ * @param {Object} distribution - Churn distribution data
+ */
+function createModalChurnChart(distribution) {
+    const ctx = document.getElementById('modal-churn-chart').getContext('2d');
+
+    // Destroy existing chart if it exists
+    if (window.modalChurnChart) {
+        window.modalChurnChart.destroy();
+    }
+
+    // Create new chart
+    window.modalChurnChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Churn', 'No Churn'],
+            datasets: [{
+                data: [distribution.churn, distribution.no_churn],
+                backgroundColor: ['#ef4444', '#10b981'],
+                borderColor: ['#ffffff', '#ffffff'],
+                borderWidth: 2,
+                hoverBackgroundColor: ['#dc2626', '#059669'],
+                hoverBorderColor: ['#ffffff', '#ffffff'],
+                hoverBorderWidth: 4,
+                borderRadius: 5,
+                spacing: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '60%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = distribution.churn + distribution.no_churn;
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+/**
+ * Create feature importance chart in modal
+ * @param {Array} featureImportance - Feature importance data
+ */
+function createModalFeatureChart(featureImportance) {
+    const ctx = document.getElementById('modal-feature-chart').getContext('2d');
+
+    // Destroy existing chart if it exists
+    if (window.modalFeatureChart) {
+        window.modalFeatureChart.destroy();
+    }
+
+    // Create gradient for bars
+    const gradient = ctx.createLinearGradient(0, 0, 400, 0);
+    gradient.addColorStop(0, 'rgba(79, 70, 229, 0.9)');
+    gradient.addColorStop(1, 'rgba(124, 58, 237, 0.7)');
+
+    // Create new chart
+    window.modalFeatureChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: featureImportance.map(f => {
+                // Format feature names for better display
+                let name = f.feature;
+                // If it's a one-hot encoded feature (contains underscore)
+                if (name.includes('_')) {
+                    const parts = name.split('_');
+                    name = `${parts[0]}: ${parts.slice(1).join(' ')}`;
+                }
+                return name;
+            }),
+            datasets: [{
+                label: 'Importance',
+                data: featureImportance.map(f => f.importance),
+                backgroundColor: gradient,
+                borderColor: 'rgba(79, 70, 229, 1)',
+                borderWidth: 2,
+                borderRadius: 6,
+                hoverBackgroundColor: 'rgba(79, 70, 229, 1)',
+                hoverBorderColor: 'rgba(79, 70, 229, 1)',
+                hoverBorderWidth: 3,
+                barPercentage: 0.8
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.raw || 0;
+                            return `Importance: ${value.toFixed(4)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(226, 232, 240, 0.5)',
+                        drawBorder: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Importance Score',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        color: '#1e293b'
+                    }
+                },
+                y: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 13,
+                            weight: 'bold'
+                        },
+                        color: '#1e293b'
+                    }
+                }
+            }
+        }
+    });
 }
 
 /**

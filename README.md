@@ -20,7 +20,7 @@ Churn Buster is a machine learning application that helps companies predict cust
 
 ### Model Management System
 - **Default Models**: 5 pre-trained machine learning models stored in `models/default_models/`
-- **Model Types**: 
+- **Model Types**:
   - Neural Network (highest accuracy among default models)
   - Random Forest
   - Support Vector Machine
@@ -178,21 +178,36 @@ During initialization, the system:
 - Active/inactive deployment status tracking
 
 #### Prediction System
-- Upload data for prediction
-- Choose from available models
+- Upload data for prediction (CSV or Excel format)
+- Choose from available models (default or deployed)
 - View and store prediction results
+- Visualize prediction outcomes and feature importance
+
+##### Data Handling Requirements
+- The system handles case sensitivity in column names
+- Required columns for prediction models:
+  - Categorical features: InternetService, OnlineSecurity, TechSupport, Contract, SeniorCitizen, Partner, Dependents, OnlineBackup, DeviceProtection, StreamingTV, StreamingMovies, PaymentMethod, PaperlessBilling
+  - Numerical features: tenure, TotalCharges, MonthlyCharges
+  - Meta: customerID
+- Extra columns in uploaded datasets are ignored
+- Churn column is not required for prediction (it's what we're predicting)
+
+##### Prediction Output
+- Visualization of churn distribution (predicted churn vs. non-churn)
+- Visualization of feature importance (top 5 features)
+- Downloadable result file containing original data plus prediction column
 
 ### User Functionality
 
 #### Model Access
 - Access to 5 default models by default
-- Access to developer-deployed models when available
+- Access to developer-deployed models when available for their company
 
 #### Prediction Workflow
 1. Create prediction name
 2. Select a model (default or developer-deployed)
-3. Upload dataset for prediction
-4. View and download prediction results
+3. Upload dataset for prediction (CSV or Excel)
+4. View visualizations and download prediction results
 5. Access prediction history
 
 ## Database Integration

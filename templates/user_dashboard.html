@@ -88,7 +88,7 @@
                             </div>
                             <h3>Make Prediction</h3>
                             <p>Upload customer data to predict churn probability</p>
-                            <button id="predictBtn" class="action-button primary">
+                            <button id="predictBtn" class="action-button primary" data-section="predict">
                                 <i class="fas fa-play"></i> Start Prediction
                             </button>
                         </div>
@@ -112,7 +112,6 @@
                                         <th>Precision</th>
                                         <th>Recall</th>
                                         <th>F1 Score</th>
-                                        <th>AUC</th>
                                         <th>Status</th>
                                     </tr>
                                 </thead>
@@ -127,19 +126,237 @@
 
             <!-- Other content sections will be hidden initially -->
             <div class="content-container hidden" id="predict-content">
-                <!-- Predict Churn content will be implemented later -->
-                <h2>Predict Churn</h2>
-                <p>This section will be implemented later.</p>
+                <!-- Prediction Form Section -->
+                <section class="card" id="prediction-form-section">
+                    <div class="card-header">
+                        <h2><i class="fas fa-chart-line"></i> Predict Customer Churn</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="predict-form" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label for="prediction-name">Prediction Name</label>
+                                <input type="text" id="prediction-name" name="prediction_name" required
+                                    placeholder="Enter a name for this prediction">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="model-select">Select Model</label>
+                                <select id="model-select" name="model_id" required>
+                                    <option value="" disabled selected>Select a model</option>
+                                    <!-- Models will be populated by JavaScript -->
+                                </select>
+                                <div class="model-info" id="selected-model-info">
+                                    <!-- Selected model info will be displayed here -->
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="dataset-upload">Upload Dataset</label>
+                                <div class="file-upload-container">
+                                    <div class="file-upload-message">Drag & drop your file here or click to browse</div>
+                                    <input type="file" id="dataset-upload" name="dataset" required
+                                        accept=".csv,.xlsx">
+                                    <div class="file-upload-info">
+                                        <p>Accepted formats: CSV, Excel</p>
+                                        <p>Required columns: customerID, tenure, InternetService, etc.</p>
+                                        <p>Max file size: 10MB</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="action-button primary">
+                                    <i class="fas fa-play"></i> Run Prediction
+                                </button>
+                                <button type="reset" class="action-button secondary">
+                                    <i class="fas fa-undo"></i> Clear Form
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- Prediction Results Section (Hidden initially) -->
+                <section class="card hidden" id="prediction-results-section">
+                    <div class="card-header">
+                        <h2><i class="fas fa-chart-pie"></i> Prediction Results</h2>
+                        <button id="back-to-form" class="action-button secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Form
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="results-summary">
+                            <div class="summary-item">
+                                <h3>Prediction Name</h3>
+                                <p id="result-prediction-name">-</p>
+                            </div>
+                            <div class="summary-item">
+                                <h3>Model Used</h3>
+                                <p id="result-model-name">-</p>
+                            </div>
+                            <div class="summary-item">
+                                <h3>Total Records</h3>
+                                <p id="result-total-records">-</p>
+                            </div>
+                            <div class="summary-item">
+                                <h3>Prediction Date</h3>
+                                <p id="result-date">-</p>
+                            </div>
+                        </div>
+
+                        <div class="results-visualizations">
+                            <div class="visualization-card">
+                                <h3>Churn Distribution</h3>
+                                <div class="chart-container">
+                                    <canvas id="churn-distribution-chart"></canvas>
+                                </div>
+                            </div>
+                            <div class="visualization-card">
+                                <h3>Feature Importance</h3>
+                                <div id="feature-importance-container" class="chart-container">
+                                    <canvas id="feature-importance-chart"></canvas>
+                                </div>
+                                <div id="feature-importance-no-data" class="no-data-message" style="display: none;">
+                                    Feature importance data not available for this model.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Prediction Results Preview -->
+                        <div class="results-preview">
+                            <h3>Results Preview</h3>
+                            <div class="preview-container">
+                                <div id="results-preview-table-container" class="table-responsive">
+                                    <table id="results-preview-table" class="preview-table">
+                                        <thead id="results-preview-thead">
+                                            <!-- Headers will be populated by JavaScript -->
+                                        </thead>
+                                        <tbody id="results-preview-tbody">
+                                            <!-- Data will be populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div id="results-preview-no-data" class="no-data-message" style="display: none;">
+                                    Preview data not available.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="results-actions">
+                            <button id="download-results" class="action-button primary">
+                                <i class="fas fa-download"></i> Download Results
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Loading Overlay -->
+                <div id="loading-overlay" class="hidden">
+                    <div class="loading-spinner"></div>
+                    <p>Processing your prediction...</p>
+                </div>
             </div>
 
             <div class="content-container hidden" id="history-content">
-                <!-- Prediction History content will be implemented later -->
-                <h2>Prediction History</h2>
-                <p>This section will be implemented later.</p>
+                <section class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-history"></i> Prediction History</h2>
+                    </div>
+                    <div class="card-body">
+                        <div id="history-loading" class="loading-container">
+                            <div class="loading-spinner"></div>
+                            <p>Loading prediction history...</p>
+                        </div>
+
+                        <div id="history-empty" class="empty-state">
+                            <i class="fas fa-search"></i>
+                            <h3>No Predictions Found</h3>
+                            <p>You haven't made any predictions yet. Go to the Predict Churn section to get started.</p>
+                            <button id="start-prediction-btn" class="action-button primary">
+                                <i class="fas fa-chart-line"></i> Start Prediction
+                            </button>
+                        </div>
+
+                        <div id="history-table-container" class="table-responsive" style="display: none;">
+                            <table id="history-table" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Prediction Name</th>
+                                        <th>Model</th>
+                                        <th>Date</th>
+                                        <th>Records</th>
+                                        <th>Churn Rate</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-table-body">
+                                    <!-- Prediction history will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Prediction Details Modal -->
+                <div id="prediction-details-modal" class="modal">
+                    <div class="modal-content large-modal">
+                        <div class="modal-header">
+                            <h2><i class="fas fa-chart-pie"></i> <span id="modal-prediction-name">Prediction Details</span></h2>
+                            <span class="close">&times;</span>
+                        </div>
+                        <div class="modal-body">
+                            <div class="modal-summary">
+                                <div class="summary-item">
+                                    <h3>Model Used</h3>
+                                    <p id="modal-model-name">-</p>
+                                </div>
+                                <div class="summary-item">
+                                    <h3>Date</h3>
+                                    <p id="modal-date">-</p>
+                                </div>
+                                <div class="summary-item">
+                                    <h3>Total Records</h3>
+                                    <p id="modal-total-records">-</p>
+                                </div>
+                                <div class="summary-item">
+                                    <h3>Churn Rate</h3>
+                                    <p id="modal-churn-rate">-</p>
+                                </div>
+                            </div>
+
+                            <div class="modal-visualizations">
+                                <div class="visualization-card">
+                                    <h3>Churn Distribution</h3>
+                                    <div class="chart-container">
+                                        <canvas id="modal-churn-chart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="visualization-card">
+                                    <h3>Feature Importance</h3>
+                                    <div id="modal-feature-container" class="chart-container">
+                                        <canvas id="modal-feature-chart"></canvas>
+                                    </div>
+                                    <div id="modal-feature-no-data" class="no-data-message" style="display: none;">
+                                        Feature importance data not available for this model.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button id="modal-download-original" class="action-button secondary">
+                                <i class="fas fa-file-upload"></i> Download Original Dataset
+                            </button>
+                            <button id="modal-download-results" class="action-button primary">
+                                <i class="fas fa-file-download"></i> Download Results
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
+    <script src="{{ url_for('static', filename='js/prediction.js') }}"></script>
     <script src="{{ url_for('static', filename='js/user_dashboard.js') }}"></script>
 </body>
 </html>

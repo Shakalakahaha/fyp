@@ -1,0 +1,42 @@
+{
+  "features": [
+    "tenure",
+    "InternetService",
+    "OnlineSecurity",
+    "TechSupport",
+    "Contract",
+    "SeniorCitizen",
+    "Partner",
+    "Dependents",
+    "OnlineBackup",
+    "DeviceProtection",
+    "StreamingTV",
+    "StreamingMovies",
+    "PaymentMethod",
+    "PaperlessBilling",
+    "TotalCharges",
+    "MonthlyCharges"
+  ],
+  "target": "Churn",
+  "meta": "customerID",
+  "categorical": [
+    "InternetService",
+    "OnlineSecurity",
+    "TechSupport",
+    "Contract",
+    "SeniorCitizen",
+    "Partner",
+    "Dependents",
+    "OnlineBackup",
+    "DeviceProtection",
+    "StreamingTV",
+    "StreamingMovies",
+    "PaymentMethod",
+    "PaperlessBilling"
+  ],
+  "numerical": [
+    "tenure",
+    "TotalCharges",
+    "MonthlyCharges"
+  ]
+}
