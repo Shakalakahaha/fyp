@@ -1068,8 +1068,23 @@ def get_prediction_feature_importance(prediction_id):
                 'message': 'Prediction not found or access denied'
             }), 404
 
-        # Get feature importance from the model
-        model_id = prediction['model_id']
+        # Check if feature importance is stored in the result field
+        if prediction['result']:
+            try:
+                result_data = json.loads(prediction['result'])
+                if 'feature_importance' in result_data and result_data['feature_importance']:
+                    logger.info(f"Using stored feature importance for prediction {prediction_id}")
+                    conn.close()
+                    return jsonify({
+                        'status': 'success',
+                        'data': result_data['feature_importance']
+                    })
+            except Exception as json_error:
+                logger.warning(f"Error parsing result JSON: {str(json_error)}")
+                # Continue with fallback method if JSON parsing fails
+
+        # Fallback: Calculate feature importance from the model
+        logger.info(f"Calculating feature importance for prediction {prediction_id}")
 
         # Map model_type_id to model_type string
         model_type_map = {
