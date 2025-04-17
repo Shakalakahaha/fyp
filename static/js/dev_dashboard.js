@@ -29,6 +29,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize retrain functionality
     initRetrain();
+
+    // Initialize FAQ functionality
+    initFAQ();
 });
 
 // Global function to navigate to a section
@@ -65,7 +68,8 @@ function initNavigation() {
         'nav-retrain': 'retrain-content',
         'nav-manage': 'manage-content',
         'nav-predict': 'predict-content',
-        'nav-history': 'history-content'
+        'nav-history': 'history-content',
+        'nav-faq': 'faq-content'
     };
 
     // Add click event listeners to all navigation links
@@ -792,5 +796,126 @@ function showNotification(message, type = 'info') {
     // For now, just use alert for errors
     if (type === 'error') {
         alert(message);
+    }
+}
+
+/**
+ * Initialize FAQ functionality
+ */
+function initFAQ() {
+    // Get FAQ elements
+    const faqItems = document.querySelectorAll('.faq-item');
+    const faqSearch = document.getElementById('faq-search');
+    const faqCategoryBtns = document.querySelectorAll('.faq-category-btn');
+
+    // Toggle FAQ answers when clicking on questions
+    if (faqItems && faqItems.length > 0) {
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question');
+            if (question) {
+                question.addEventListener('click', () => {
+                    // Toggle active class on the item
+                    item.classList.toggle('active');
+                });
+            }
+        });
+    }
+
+    // Filter FAQs when typing in search box
+    if (faqSearch) {
+        faqSearch.addEventListener('input', () => {
+            const searchTerm = faqSearch.value.toLowerCase().trim();
+
+            // If search term is empty, show all FAQs based on active category
+            if (searchTerm === '') {
+                const activeCategory = document.querySelector('.faq-category-btn.active');
+                if (activeCategory) {
+                    const categoryId = activeCategory.getAttribute('data-category');
+                    filterFAQsByCategory(categoryId);
+                }
+                return;
+            }
+
+            // Hide all categories first
+            document.querySelectorAll('.faq-category').forEach(category => {
+                category.style.display = 'none';
+            });
+
+            // Show all categories that have matching FAQs
+            let hasResults = false;
+
+            // Search through all FAQ items
+            faqItems.forEach(item => {
+                const questionText = item.querySelector('.faq-question h4').textContent.toLowerCase();
+                const answerText = item.querySelector('.faq-answer').textContent.toLowerCase();
+
+                if (questionText.includes(searchTerm) || answerText.includes(searchTerm)) {
+                    // Show this item
+                    item.style.display = 'block';
+                    // Show its parent category
+                    const parentCategory = item.closest('.faq-category');
+                    if (parentCategory) {
+                        parentCategory.style.display = 'block';
+                    }
+                    hasResults = true;
+                } else {
+                    // Hide this item
+                    item.style.display = 'none';
+                }
+            });
+
+            // If no results found, show a message
+            const noResultsElement = document.getElementById('faq-no-results');
+            if (noResultsElement) {
+                noResultsElement.style.display = hasResults ? 'none' : 'block';
+            }
+        });
+    }
+
+    // Switch between FAQ categories
+    if (faqCategoryBtns && faqCategoryBtns.length > 0) {
+        faqCategoryBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active class from all buttons
+                faqCategoryBtns.forEach(b => b.classList.remove('active'));
+                // Add active class to clicked button
+                btn.classList.add('active');
+
+                // Filter FAQs by category
+                const categoryId = btn.getAttribute('data-category');
+                filterFAQsByCategory(categoryId);
+
+                // Clear search box
+                if (faqSearch) {
+                    faqSearch.value = '';
+                }
+            });
+        });
+    }
+
+    // Initial setup - show the first category
+    filterFAQsByCategory('general');
+}
+
+/**
+ * Filter FAQs by category
+ * @param {string} categoryId - Category ID to filter by
+ */
+function filterFAQsByCategory(categoryId) {
+    // Hide all categories
+    document.querySelectorAll('.faq-category').forEach(category => {
+        category.style.display = 'none';
+    });
+
+    // Show the selected category
+    const selectedCategory = document.getElementById(categoryId);
+    if (selectedCategory) {
+        selectedCategory.style.display = 'block';
+
+        // Show all items in this category
+        const items = selectedCategory.querySelectorAll('.faq-item');
+        items.forEach(item => {
+            item.style.display = 'block';
+        });
     }
 }

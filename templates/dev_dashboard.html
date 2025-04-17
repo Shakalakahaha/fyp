@@ -49,6 +49,12 @@
                             <span>Prediction History</span>
                         </a>
                     </li>
+                    <li>
+                        <a href="#" id="nav-faq">
+                            <i class="fas fa-question-circle"></i>
+                            <span>FAQ</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
 
@@ -591,6 +597,286 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- FAQ Content -->
+            <div class="content-container hidden" id="faq-content">
+                <section class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-question-circle"></i> Frequently Asked Questions</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="faq-container">
+                            <div class="faq-search">
+                                <input type="text" id="faq-search" placeholder="Search FAQs...">
+                                <i class="fas fa-search"></i>
+                            </div>
+
+                            <div class="faq-categories">
+                                <button class="faq-category-btn active" data-category="general">General</button>
+                                <button class="faq-category-btn" data-category="data">Data</button>
+                                <button class="faq-category-btn" data-category="models">Models</button>
+                                <button class="faq-category-btn" data-category="prediction">Prediction</button>
+                                <button class="faq-category-btn" data-category="retraining">Retraining</button>
+                            </div>
+
+                            <div class="faq-list">
+                                <!-- No results message -->
+                                <div id="faq-no-results" class="no-results" style="display: none;">
+                                    <i class="fas fa-search"></i>
+                                    <h3>No results found</h3>
+                                    <p>Try different search terms or browse by category</p>
+                                </div>
+
+                                <!-- General System Information -->
+                                <div class="faq-category" id="general">
+                                    <h3>General System Information</h3>
+
+                                    <div class="faq-item">
+                                        <div class="faq-question">
+                                            <h4>What is this system for?</h4>
+                                            <i class="fas fa-chevron-down"></i>
+                                        </div>
+                                        <div class="faq-answer">
+                                            <p>This system helps companies predict customer churn using machine learning. It enables both developers and users to upload customer data and receive predictions on which customers are likely to leave (churn) or stay. The developer dashboard provides additional capabilities for model management, retraining, and deployment, allowing technical teams to customize the prediction system for their company's specific needs.</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="faq-item">
+                                        <div class="faq-question">
+                                            <h4>How does the churn prediction model work?</h4>
+                                            <i class="fas fa-chevron-down"></i>
+                                        </div>
+                                        <div class="faq-answer">
+                                            <p>The system uses machine learning models to analyze customer data and predict churn. Users upload a dataset, choose a model, and the system processes the data to return prediction results. Developers can use pre-trained default models or retrain models with company-specific data to improve prediction accuracy. The system analyzes patterns in customer behavior (such as tenure, contract type, and service usage) to identify factors that contribute to churn.</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="faq-item">
+                                        <div class="faq-question">
+                                            <h4>What machine learning algorithms are used?</h4>
+                                            <i class="fas fa-chevron-down"></i>
+                                        </div>
+                                        <div class="faq-answer">
+                                            <p>The system offers five different machine learning models:</p>
+                                            <ul>
+                                                <li><strong>Gradient Boosting Machine (GBM)</strong> - Our highest accuracy default model, using 400 estimators with a learning rate of 0.01 and max depth of 5.</li>
+                                                <li><strong>Random Forest</strong> - An ensemble model with 150 trees, max depth of 20, and class balancing for robust predictions.</li>
+                                                <li><strong>Neural Network</strong> - A multi-layer perceptron with two hidden layers (100 and 50 neurons) using identity activation and SGD solver.</li>
+                                                <li><strong>Logistic Regression</strong> - A linear model with L2 regularization (C=0.017) and class balancing.</li>
+                                                <li><strong>Decision Tree</strong> - A simple interpretable model with max depth of 6 and minimum samples per leaf of 9.</li>
+                                            </ul>
+                                            <p>All default models are trained on a standard telecom customer dataset. For retraining, the system uses the GBM algorithm with the same parameters to ensure consistency while allowing for improved accuracy with company-specific data.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Data Requirements Category -->
+                                <div class="faq-category" id="data" style="display: none;">
+                                    <h3>Data Requirements</h3>
+
+                                    <div class="faq-item">
+                                        <div class="faq-question">
+                                            <h4>What data format is required for prediction?</h4>
+                                            <i class="fas fa-chevron-down"></i>
+                                        </div>
+                                        <div class="faq-answer">
+                                            <p>The system accepts CSV and Excel (.xlsx, .xls) file formats for prediction. Your dataset must contain all the required columns for the model to work correctly. The system will validate your dataset upon upload and notify you of any missing or incorrectly formatted columns.</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="faq-item">
+                                        <div class="faq-question">
+                                            <h4>What columns are required in the dataset?</h4>
+                                            <i class="fas fa-chevron-down"></i>
+                                        </div>
+                                        <div class="faq-answer">
+                                            <p>The required columns include:</p>
+                                            <ul>
+                                                <li><strong>Categorical features:</strong> InternetService, OnlineSecurity, TechSupport, Contract, SeniorCitizen, Partner, Dependents, OnlineBackup, DeviceProtection, StreamingTV, StreamingMovies, PaymentMethod, PaperlessBilling</li>
+                                                <li><strong>Numerical features:</strong> tenure, TotalCharges, MonthlyCharges</li>
+                                                <li><strong>Metadata:</strong> customerID (for identification purposes)</li>
+                                            </ul>
+                                            <p>The system will validate these columns when you upload a dataset and provide specific error messages if any required columns are missing.</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="faq-item">
+                                        <div class="faq-question">
+                                            <h4>Can I upload datasets with extra columns?</h4>
+                                            <i class="fas fa-chevron-down"></i>
+                                        </div>
+                                        <div class="faq-answer">
+                                            <p>Yes, the system can handle datasets with extra columns. These additional columns will be preserved in the prediction results but won't be used for the prediction calculation. This allows you to maintain customer-specific information alongside the prediction results without affecting the model's performance.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Models Category -->
+                                <div class="faq-category" id="models" style="display: none;">
+                                    <h3>Models</h3>
+
+                                    <div class="faq-item">
+                                        <div class="faq-question">
+                                            <h4>What's the difference between the available models?</h4>
+                                            <i class="fas fa-chevron-down"></i>
+                                        </div>
+                                        <div class="faq-answer">
+                                            <p>Each model has different strengths and characteristics:</p>
+                                            <ul>
+                                                <li><strong>Gradient Boosting Machine (GBM)</strong> - Typically has the highest accuracy and is good at handling complex relationships in data.</li>
+                                                <li><strong>Random Forest</strong> - Very robust against overfitting and handles a mix of feature types well.</li>
+                                                <li><strong>Neural Network</strong> - Can capture complex non-linear patterns but may require more data to perform well.</li>
+                                                <li><strong>Logistic Regression</strong> - Simple, interpretable model that works well when relationships are mostly linear.</li>
+                                                <li><strong>Decision Tree</strong> - Highly interpretable with clear decision rules, but may be less accurate than ensemble methods.</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <div class="faq-item">
+                                        <div class="faq-question">
+                                            <h4>Which model has the highest accuracy?</h4>
+                                            <i class="fas fa-chevron-down"></i>
+                                        </div>
+                                        <div class="faq-answer">
+                                            <p>The Gradient Boosting Machine (GBM) model typically has the highest accuracy among our default models. This is why it's also used as the basis for model retraining. However, performance can vary depending on your specific data. You can compare model metrics in the "Available Models" section to choose the best model for your needs.</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="faq-item">
+                                        <div class="faq-question">
+                                            <h4>What does model retraining do?</h4>
+                                            <i class="fas fa-chevron-down"></i>
+                                        </div>
+                                        <div class="faq-answer">
+                                            <p>Model retraining allows you to improve prediction accuracy by incorporating your company's specific customer data. When you retrain a model, the system:</p>
+                                            <ol>
+                                                <li>Combines your uploaded dataset with existing data</li>
+                                                <li>Trains a new GBM model using this combined dataset</li>
+                                                <li>Evaluates the new model's performance against the previous model</li>
+                                                <li>Allows you to deploy the new model if it performs better</li>
+                                            </ol>
+                                            <p>This process helps the system learn patterns specific to your customer base, potentially improving prediction accuracy.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Prediction Category -->
+                                <div class="faq-category" id="prediction" style="display: none;">
+                                    <h3>Prediction</h3>
+
+                                    <div class="faq-item">
+                                        <div class="faq-question">
+                                            <h4>How do I make a prediction?</h4>
+                                            <i class="fas fa-chevron-down"></i>
+                                        </div>
+                                        <div class="faq-answer">
+                                            <p>To make a prediction:</p>
+                                            <ol>
+                                                <li>Navigate to the prediction section in the dashboard</li>
+                                                <li>Upload your dataset (CSV or Excel format)</li>
+                                                <li>Enter a name for your prediction</li>
+                                                <li>Select a model from the dropdown menu</li>
+                                                <li>Click "Predict" to start the process</li>
+                                                <li>View the results, including churn distribution and feature importance</li>
+                                                <li>Download the prediction results or return to make another prediction</li>
+                                            </ol>
+                                        </div>
+                                    </div>
+
+                                    <div class="faq-item">
+                                        <div class="faq-question">
+                                            <h4>What do the prediction results mean?</h4>
+                                            <i class="fas fa-chevron-down"></i>
+                                        </div>
+                                        <div class="faq-answer">
+                                            <p>The prediction results show:</p>
+                                            <ol>
+                                                <li><strong>Churn Distribution</strong> - A pie chart showing the percentage of customers predicted to churn vs. stay</li>
+                                                <li><strong>Feature Importance</strong> - A bar chart showing the top 5 factors influencing churn predictions</li>
+                                                <li><strong>Preview</strong> - The first 10 rows of your dataset with added prediction columns</li>
+                                            </ol>
+                                            <p>You can download the complete results, which include your original data plus a "Churn_Prediction" column (Yes/No) and a "Churn_Probability" column (0-1 value).</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="faq-item">
+                                        <div class="faq-question">
+                                            <h4>How is feature importance calculated?</h4>
+                                            <i class="fas fa-chevron-down"></i>
+                                        </div>
+                                        <div class="faq-answer">
+                                            <p>Feature importance is calculated differently based on the model type:</p>
+                                            <ul>
+                                                <li>For tree-based models (GBM, Random Forest, Decision Tree), we use the built-in feature importance values</li>
+                                                <li>For linear models (Logistic Regression), we use the absolute values of the coefficients</li>
+                                                <li>For Neural Networks, we calculate importance based on the weights in the first layer</li>
+                                            </ul>
+                                            <p>All feature importance values are normalized to sum to 1.0, making them easier to interpret and compare across different models.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Retraining Category -->
+                                <div class="faq-category" id="retraining" style="display: none;">
+                                    <h3>Retraining</h3>
+
+                                    <div class="faq-item">
+                                        <div class="faq-question">
+                                            <h4>When should I retrain a model?</h4>
+                                            <i class="fas fa-chevron-down"></i>
+                                        </div>
+                                        <div class="faq-answer">
+                                            <p>You should consider retraining a model when:</p>
+                                            <ul>
+                                                <li>You have new customer data that includes churn outcomes</li>
+                                                <li>Your business has undergone significant changes that might affect churn patterns</li>
+                                                <li>You've introduced new products or services that might influence customer behavior</li>
+                                                <li>You want to improve prediction accuracy for your specific customer base</li>
+                                            </ul>
+                                            <p>Regular retraining (e.g., quarterly or bi-annually) can help keep your models up-to-date with evolving customer behavior patterns.</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="faq-item">
+                                        <div class="faq-question">
+                                            <h4>How does the retraining process work?</h4>
+                                            <i class="fas fa-chevron-down"></i>
+                                        </div>
+                                        <div class="faq-answer">
+                                            <p>The retraining process involves these steps:</p>
+                                            <ol>
+                                                <li><strong>Dataset Upload</strong>: You upload a dataset containing customer data with known churn outcomes</li>
+                                                <li><strong>Dataset Validation</strong>: The system checks that your dataset has all required columns and proper formatting</li>
+                                                <li><strong>Data Combination</strong>: For first-time retraining, your data is combined with the original dataset; for subsequent retraining, it's combined with the latest combined dataset</li>
+                                                <li><strong>Model Training</strong>: A new GBM model is trained using the combined dataset</li>
+                                                <li><strong>Performance Evaluation</strong>: The system compares metrics between the new model and the previous model</li>
+                                                <li><strong>Deployment Option</strong>: You can choose to deploy the new model if it performs better</li>
+                                            </ol>
+                                        </div>
+                                    </div>
+
+                                    <div class="faq-item">
+                                        <div class="faq-question">
+                                            <h4>How do I deploy a retrained model?</h4>
+                                            <i class="fas fa-chevron-down"></i>
+                                        </div>
+                                        <div class="faq-answer">
+                                            <p>After successfully retraining a model, you can deploy it by:</p>
+                                            <ol>
+                                                <li>Reviewing the performance metrics comparison between the new and previous models</li>
+                                                <li>Clicking the "Deploy Model" button on the retraining results screen</li>
+                                                <li>The model will be stored in the system and made available for predictions</li>
+                                                <li>You can manage deployed models in the "Manage Models" section, where you can toggle their availability</li>
+                                            </ol>
+                                            <p>Once deployed, the new model will appear in the model selection dropdown when making predictions.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
         </main>
     </div>
