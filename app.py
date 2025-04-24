@@ -73,9 +73,9 @@ def get_db_connection():
     try:
         conn = mysql.connector.connect(
             host="localhost",
-            user="root",
-            password="",
-            database="fyp_db"
+            user="ccp_shakalaka",
+            password="HlLD2PCqg!8z0bLk",
+            database="ccp_churnbuster"
         )
         return conn
     except mysql.connector.Error as err:

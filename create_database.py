@@ -13,10 +13,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Database connection settings
-DB_USER = 'root'  # Replace with your MySQL username
-DB_PASSWORD = ''  # Replace with your MySQL password
+DB_USER = 'ccp_shakalaka'  # Replace with your MySQL username
+DB_PASSWORD = 'HlLD2PCqg!8z0bLk'  # Replace with your MySQL password
 DB_HOST = 'localhost'
-DB_NAME = 'fyp_db'  # Replace with your desired database name
+DB_NAME = 'ccp_churnbuster'  # Replace with your desired database name
 
 # Create database URL
 DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"

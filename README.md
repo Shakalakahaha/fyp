@@ -1,6 +1,6 @@
 # Churn Buster
 
-A web-based customer churn prediction platform built with Flask.
+A web-based customer churn prediction platform built with Flask, designed to help companies predict and reduce customer churn using machine learning models.
 
 ## Project Overview
 
@@ -21,13 +21,14 @@ Churn Buster is a machine learning application that helps companies predict cust
 ### Model Management System
 - **Default Models**: 5 pre-trained machine learning models stored in `models/default_models/`
 - **Model Types**:
-  - Neural Network (highest accuracy among default models)
+  - Gradient Boosting Machine (GBM) (highest accuracy among default models)
   - Random Forest
-  - Support Vector Machine
+  - Neural Network
   - Logistic Regression
   - Decision Tree
 - **Model Versioning**: System tracks versions of retrained models (v2, v3, etc.)
 - **Model Deployment**: Developers can deploy new model versions to users of their company
+- **Feature Importance**: All models provide normalized feature importance values (sum to 1.0) for the top 5 features
 
 ### Data Management System
 - **Dataset Storage Structure**:
@@ -147,10 +148,9 @@ During initialization, the system:
 - Metrics format:
 ```python
 {
-    'model_type': 'Neural Network',
+    'model_type': 'Gradient Boosting',
     'metrics': {
         'Accuracy': 0.8096348096348096,
-        'AUC': 0.850327660103112,
         'Precision': 0.8008413413551754,
         'Recall': 0.8096348096348096,
         'F1 Score': 0.8027330375218171
@@ -159,29 +159,32 @@ During initialization, the system:
 ```
 
 #### Model Retraining
-- Neural Network retraining with custom datasets
+- Gradient Boosting Machine (GBM) retraining with custom datasets
 - Dataset combination workflow:
   1. Developer uploads custom dataset
   2. System combines with existing dataset
   3. For subsequent retrains, combines with the most recent combined dataset
 - Retraining parameters:
-  - Hidden layers: [100, 50] neurons
-  - Activation function: identity
-  - Solver: SGD
-  - Regularization alpha: 0.1
-  - Maximum iterations: 200
+  - n_estimators: 400
+  - learning_rate: 0.01
+  - max_depth: 5
+  - min_samples_split: 2
+  - subsample: 0.8
   - Train/test split: 80/20
 
 #### Model Deployment
 - Deploy retrained models to company users
 - Multiple version management
 - Active/inactive deployment status tracking
+- Toggle deployment status for retrained models
 
 #### Prediction System
 - Upload data for prediction (CSV or Excel format)
 - Choose from available models (default or deployed)
 - View and store prediction results
 - Visualize prediction outcomes and feature importance
+- Preview first 10 rows of prediction results
+- Download original dataset and prediction results
 
 ##### Data Handling Requirements
 - The system handles case sensitivity in column names
@@ -189,13 +192,19 @@ During initialization, the system:
   - Categorical features: InternetService, OnlineSecurity, TechSupport, Contract, SeniorCitizen, Partner, Dependents, OnlineBackup, DeviceProtection, StreamingTV, StreamingMovies, PaymentMethod, PaperlessBilling
   - Numerical features: tenure, TotalCharges, MonthlyCharges
   - Meta: customerID
-- Extra columns in uploaded datasets are ignored
+- Extra columns in uploaded datasets are preserved in results
 - Churn column is not required for prediction (it's what we're predicting)
 
 ##### Prediction Output
 - Visualization of churn distribution (predicted churn vs. non-churn)
-- Visualization of feature importance (top 5 features)
-- Downloadable result file containing original data plus prediction column
+- Visualization of feature importance (top 5 features with normalized values)
+- Preview of first 10 rows of prediction results
+- Downloadable result file containing original data plus prediction columns (Churn_Prediction and Churn_Probability)
+
+##### Prediction History
+- View history of all predictions made
+- Filter and search prediction history
+- For each prediction: view results, download original dataset, download prediction results
 
 ### User Functionality
 
@@ -208,7 +217,12 @@ During initialization, the system:
 2. Select a model (default or developer-deployed)
 3. Upload dataset for prediction (CSV or Excel)
 4. View visualizations and download prediction results
-5. Access prediction history
+5. Access prediction history with options to view results, download original dataset, and download prediction results
+
+#### User Dashboard
+- Clean, intuitive interface for making predictions
+- Prediction history section with detailed results
+- Ability to view feature importance and churn distribution for past predictions
 
 ## Database Integration
 
@@ -230,10 +244,15 @@ During initialization, the system:
 ## Implementation Status
 - Authentication system: ✅ Complete
 - Database schema: ✅ Complete
-- Model initialization: ⏳ In progress
-- Retraining functionality: ⏳ In progress
-- Prediction system: ⏳ In progress
-- Model deployment: ⏳ In progress
+- Model initialization: ✅ Complete
+- Retraining functionality: ✅ Complete
+- Prediction system: ✅ Complete
+- Model deployment: ✅ Complete
+- Feature importance calculation: ✅ Complete
+- Prediction history: ✅ Complete
+- Developer dashboard: ✅ Complete
+- User dashboard: ✅ Complete
+- FAQ section: ✅ Complete
 
 ## Technical Details
 
@@ -262,13 +281,37 @@ project/
 └── README.md                     # Project documentation
 ```
 
-### Neural Network Retraining Process
-1. Load existing Neural Network model
+### Gradient Boosting Machine (GBM) Retraining Process
+1. Load existing GBM model parameters
 2. Combine new dataset with previous combined dataset
 3. Preprocess data (encoding categorical variables, scaling)
 4. Split data (80% training, 20% testing)
-5. Train model with specified parameters
+5. Train model with specified parameters (n_estimators: 400, learning_rate: 0.01, max_depth: 5)
 6. Evaluate model performance
-7. Save model and performance metrics
-8. Update database with new model information
+7. Compare metrics with previous model version
+8. Save model and performance metrics
+9. Update database with new model information
+
+### Feature Importance Calculation
+1. For tree-based models (GBM, Random Forest, Decision Tree): Use built-in feature_importances_
+2. For linear models (Logistic Regression): Use absolute values of coefficients
+3. For Neural Networks: Calculate importance based on weights in the first layer
+4. Normalize all importance values to sum to 1.0
+5. Return top 5 features by importance
+
+### Dashboard Features
+1. **Developer Dashboard**:
+   - Quick actions for retraining and prediction
+   - Available models table with metrics
+   - Model management with deployment controls
+   - Prediction system with visualizations
+   - Retraining interface with performance comparison
+   - Prediction history with detailed results
+   - FAQ section with system information
+
+2. **User Dashboard**:
+   - Simplified interface for predictions
+   - Access to deployed models
+   - Visualization of prediction results
+   - Prediction history with result viewing
 
