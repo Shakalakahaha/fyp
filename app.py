@@ -91,7 +91,7 @@ def generate_company_id(cursor):
         company_id = f"CCP{random_digits}"
 
         # Check if it exists in the database
-        cursor.execute("SELECT COUNT(*) FROM Companies WHERE id = %s", (company_id,))
+        cursor.execute("SELECT COUNT(*) FROM companies WHERE id = %s", (company_id,))
         count = cursor.fetchone()[0]
 
         if count == 0:
@@ -130,7 +130,7 @@ def api_register_company():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM Companies WHERE email = %s", (company_email,))
+    cursor.execute("SELECT * FROM companies WHERE email = %s", (company_email,))
     if cursor.fetchone():
         cursor.close()
         conn.close()
@@ -190,9 +190,9 @@ def api_verify_company():
     try:
         company_id = generate_company_id(cursor)
 
-        # Insert into Companies table
+        # Insert into companies table
         cursor.execute(
-            "INSERT INTO Companies (id, name, email, email_verified) VALUES (%s, %s, %s, %s)",
+            "INSERT INTO companies (id, name, email, email_verified) VALUES (%s, %s, %s, %s)",
             (company_id, session['pending_company']['name'], session['pending_company']['email'], True)
         )
 
@@ -229,9 +229,9 @@ def api_register_user():
     cursor = conn.cursor()
 
     if account_type == 'developer':
-        cursor.execute("SELECT * FROM Developers WHERE email = %s", (email,))
+        cursor.execute("SELECT * FROM developers WHERE email = %s", (email,))
     else:
-        cursor.execute("SELECT * FROM Users WHERE email = %s", (email,))
+        cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
 
     if cursor.fetchone():
         cursor.close()
@@ -239,7 +239,7 @@ def api_register_user():
         return jsonify({"success": False, "message": "User with this email already exists"}), 400
 
     # Check if company exists
-    cursor.execute("SELECT * FROM Companies WHERE id = %s", (company_id,))
+    cursor.execute("SELECT * FROM companies WHERE id = %s", (company_id,))
     if not cursor.fetchone():
         cursor.close()
         conn.close()
@@ -307,13 +307,13 @@ def api_verify_user():
     try:
         if session['pending_user']['account_type'] == 'developer':
             cursor.execute(
-                "INSERT INTO Developers (company_id, email, password_hash, email_verified) VALUES (%s, %s, %s, %s)",
+                "INSERT INTO developers (company_id, email, password_hash, email_verified) VALUES (%s, %s, %s, %s)",
                 (session['pending_user']['company_id'], session['pending_user']['email'],
                  session['pending_user']['password'], True)
             )
         else:
             cursor.execute(
-                "INSERT INTO Users (company_id, email, password_hash, email_verified) VALUES (%s, %s, %s, %s)",
+                "INSERT INTO users (company_id, email, password_hash, email_verified) VALUES (%s, %s, %s, %s)",
                 (session['pending_user']['company_id'], session['pending_user']['email'],
                  session['pending_user']['password'], True)
             )
@@ -349,9 +349,9 @@ def api_login():
 
     try:
         if account_type == 'developer':
-            cursor.execute("SELECT * FROM Developers WHERE email = %s", (email,))
+            cursor.execute("SELECT * FROM developers WHERE email = %s", (email,))
         else:
-            cursor.execute("SELECT * FROM Users WHERE email = %s", (email,))
+            cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
 
         user = cursor.fetchone()
 
@@ -391,9 +391,9 @@ def api_forgot_password():
     try:
         # Check if user/developer exists with given email
         if account_type == 'user':
-            cursor.execute("SELECT email FROM Users WHERE email = %s", (email,))
+            cursor.execute("SELECT email FROM users WHERE email = %s", (email,))
         elif account_type == 'developer':
-            cursor.execute("SELECT email FROM Developers WHERE email = %s", (email,))
+            cursor.execute("SELECT email FROM developers WHERE email = %s", (email,))
         else:
             logger.warning(f"Invalid account type: {account_type}")
             return jsonify({"success": False, "message": "Invalid account type"}), 400
@@ -482,9 +482,9 @@ def api_reset_password():
     try:
         # Update password in appropriate table based on account type
         if account_type == 'user':
-            cursor.execute("UPDATE Users SET password_hash = %s WHERE email = %s", (hashed_password, email))
+            cursor.execute("UPDATE users SET password_hash = %s WHERE email = %s", (hashed_password, email))
         elif account_type == 'developer':
-            cursor.execute("UPDATE Developers SET password_hash = %s WHERE email = %s", (hashed_password, email))
+            cursor.execute("UPDATE developers SET password_hash = %s WHERE email = %s", (hashed_password, email))
         else:
             logger.error(f"Invalid account type during password reset: {account_type}")
             return jsonify({"success": False, "message": "Invalid account type"}), 400
@@ -517,7 +517,7 @@ def api_recover_company_id():
 
     try:
         # First check if it's a company email
-        cursor.execute("SELECT id FROM Companies WHERE email = %s", (email,))
+        cursor.execute("SELECT id FROM companies WHERE email = %s", (email,))
         company = cursor.fetchone()
 
         if company:
@@ -543,13 +543,13 @@ def api_recover_company_id():
             return jsonify({"success": True, "message": "Verification code sent to email", "direct_match": False})
         else:
             # Check if it's a developer or user email
-            cursor.execute("SELECT company_id FROM Developers WHERE email = %s", (email,))
+            cursor.execute("SELECT company_id FROM developers WHERE email = %s", (email,))
             developer = cursor.fetchone()
 
             if developer:
                 company_id = developer['company_id']
             else:
-                cursor.execute("SELECT company_id FROM Users WHERE email = %s", (email,))
+                cursor.execute("SELECT company_id FROM users WHERE email = %s", (email,))
                 user = cursor.fetchone()
 
                 if user:

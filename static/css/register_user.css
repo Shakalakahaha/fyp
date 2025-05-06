@@ -396,11 +396,15 @@ header {
     outline: none;
 }
 
+.input-group input.error,
+.input-group select.error {
+    border-color: #f44336;
+}
+
 .error {
     color: #f44336;
     font-size: 0.8rem;
     margin-top: 5px;
-    display: none;
 }
 
 /* Verification Code */

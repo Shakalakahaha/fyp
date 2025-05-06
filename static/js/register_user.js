@@ -1,6 +1,11 @@
 // register_user.js - Script for the user registration form
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Hide all error messages on page load
+    document.querySelectorAll('.error').forEach(function(el) {
+        el.style.display = 'none';
+    });
+    
     // Get DOM elements - Main registration steps
     const steps = document.querySelectorAll('.step');
     const formSteps = document.querySelectorAll('.form-step');
@@ -412,10 +417,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Event Listeners
     if (registerBtn) {
-        registerBtn.addEventListener('click', function() {
-            // Validate form inputs
+        registerBtn.addEventListener('click', function(event) {
+            event.preventDefault();
             let isValid = true;
-            
+
             // Validate account type
             if (!accountTypeSelect.value) {
                 accountTypeError.style.display = 'block';
@@ -426,7 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 accountTypeSelect.classList.remove('error');
                 accountType = accountTypeSelect.value;
             }
-            
+
             // Validate company ID
             if (!validateCompanyId(companyIdInput.value)) {
                 companyIdError.style.display = 'block';
@@ -437,7 +442,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 companyIdInput.classList.remove('error');
                 companyId = companyIdInput.value;
             }
-            
+
             // Validate email
             if (!validateEmail(emailInput.value)) {
                 emailError.style.display = 'block';
@@ -448,7 +453,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 emailInput.classList.remove('error');
                 userEmail = emailInput.value;
             }
-            
+
             // Validate password
             if (passwordInput.value.length < 8) {
                 passwordError.style.display = 'block';
@@ -458,7 +463,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 passwordError.style.display = 'none';
                 passwordInput.classList.remove('error');
             }
-            
+
             // Validate password confirmation
             if (passwordInput.value !== confirmPasswordInput.value) {
                 confirmPasswordError.style.display = 'block';
@@ -468,9 +473,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 confirmPasswordError.style.display = 'none';
                 confirmPasswordInput.classList.remove('error');
             }
-            
-            if (isValid) {
-                // Move to verification step
+
+            // Debug log
+            if (!isValid) {
+                console.log('Validation failed. Step 1 remains visible.');
+            } else {
+                console.log('Validation passed. Moving to step 2.');
                 showStep(2);
                 sendVerificationEmail();
             }
@@ -628,4 +636,12 @@ document.addEventListener('DOMContentLoaded', function() {
             checkVerificationInputs(recoveryCodeInputs, verifyRecoveryCode);
         });
     });
+    
+    // Prevent form submission and page reload
+    const registrationForm = document.getElementById('user-registration-form');
+    if (registrationForm) {
+        registrationForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+        });
+    }
 });

@@ -206,8 +206,8 @@ def load_model(model_path):
     """
     logger.info(f"Loading model from: {model_path}")
 
-    # Normalize path separators
-    model_path = os.path.normpath(model_path)
+    # Normalize path to use forward slashes
+    model_path = model_path.replace('\\', '/').replace('\\\\', '/')
 
     # Check if the file exists
     if not os.path.exists(model_path):
@@ -322,7 +322,7 @@ def make_prediction(df, model):
         # For neural network, try to load the scaler
         scaler = None
         if model_name == 'neural_network':
-            scaler_path = f"models/default_models/{model_name}_scaler.pkl"
+            scaler_path = os.path.join('models', 'default_models', f"{model_name}_scaler.pkl")
             if os.path.exists(scaler_path):
                 try:
                     scaler = joblib.load(scaler_path)
@@ -332,7 +332,7 @@ def make_prediction(df, model):
 
         # Try to load feature names from file
         if model_name:
-            feature_names_path = f"models/default_models/{model_name}_features.pkl"
+            feature_names_path = os.path.join('models', 'default_models', f"{model_name}_features.pkl")
             if os.path.exists(feature_names_path):
                 try:
                     with open(feature_names_path, 'rb') as f:

@@ -130,10 +130,11 @@ def get_latest_dataset(company_id):
             dataset = result.fetchone()
 
             if dataset:
+                file_path = dataset[1].replace('\\', '/')
                 logger.info(f"Found latest combined dataset for company {company_id}: {dataset[0]}")
                 return {
                     "id": dataset[0],
-                    "file_path": dataset[1],
+                    "file_path": file_path,
                     "name": dataset[2],
                     "type": "combined"
                 }
@@ -149,10 +150,11 @@ def get_latest_dataset(company_id):
             dataset = result.fetchone()
 
             if dataset:
+                file_path = dataset[1].replace('\\', '/')
                 logger.info(f"No combined dataset found for company {company_id}, using original dataset: {dataset[0]}")
                 return {
                     "id": dataset[0],
-                    "file_path": dataset[1],
+                    "file_path": file_path,
                     "name": dataset[2],
                     "type": "original"
                 }
